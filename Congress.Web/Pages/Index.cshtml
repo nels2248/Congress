@@ -1,0 +1,78 @@
+﻿@page
+@model IndexModel
+@{
+    ViewData["Title"] = "Congress119";
+}
+
+<h1>Congress119 Bill Tracker</h1>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Bill ID</th>
+            <th>Title</th>
+            <th>Sponsor</th>
+            <th>Passed</th>
+            <th>Passage Probability</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var bill in Model.Bills)
+        {
+            <tr>
+                <td>@bill.BillId</td>
+                <td>@bill.Title</td>
+                <td>@bill.Sponsor</td>
+                <td>@(bill.Passed ? "Yes" : "No")</td>
+                <td>@bill.PassageProbability.ToString("P0")</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<h2>Passage Probability by Bill</h2>
+<div id="chart"></div>
+
+@section Scripts {
+    <script>
+        const billData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(
+            Model.Bills.Select(b => new { id = b.BillId, probability = b.PassageProbability })
+        ));
+
+        const width = 500;
+        const height = 300;
+        const margin = { top: 20, right: 20, bottom: 40, left: 50 };
+
+        const svg = d3.select("#chart")
+            .append("svg")
+            .attr("width", width)
+            .attr("height", height);
+
+        const x = d3.scaleBand()
+            .domain(billData.map(d => d.id))
+            .range([margin.left, width - margin.right])
+            .padding(0.2);
+
+        const y = d3.scaleLinear()
+            .domain([0, 1])
+            .range([height - margin.bottom, margin.top]);
+
+        svg.append("g")
+            .selectAll("rect")
+            .data(billData)
+            .join("rect")
+            .attr("x", d => x(d.id))
+            .attr("y", d => y(d.probability))
+            .attr("width", x.bandwidth())
+            .attr("height", d => y(0) - y(d.probability))
+            .attr("fill", "steelblue");
+
+        svg.append("g")
+            .attr("transform", `translate(0,${height - margin.bottom})`)
+            .call(d3.axisBottom(x));
+
+        svg.append("g")
+            .attr("transform", `translate(${margin.left},0)`)
+            .call(d3.axisLeft(y).tickFormat(d3.format(".0%")));
+    </script>
+}
