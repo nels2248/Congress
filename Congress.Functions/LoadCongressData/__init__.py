@@ -314,5 +314,14 @@ def main(mytimer: func.TimerRequest) -> None:
             "Load complete — loaded=%s errors=%s elements=%s values=%s",
             loaded, errors, total_elements, total_values,
         )
+
+        # BUILD SILVER LAYER — only runs if the Bronze load above completed
+        # without raising, so Silver never rebuilds from a partial/broken load
+        logging.info("Building Silver.Bills from Bronze data...")
+        cursor = connection.cursor()
+        cursor.execute("EXEC Silver.BuildBills")
+        connection.commit()
+        cursor.close()
+        logging.info("Silver.Bills build complete")
     finally:
         connection.close()
