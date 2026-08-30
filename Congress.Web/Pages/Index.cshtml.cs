@@ -20,6 +20,7 @@ public class IndexModel : PageModel
     {
         Bills = await _db.Bills
             .OrderByDescending(b => b.LatestActionDate)
+            .Take(100)
             .ToListAsync();
     }
 }
