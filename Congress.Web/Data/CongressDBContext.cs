@@ -13,13 +13,18 @@ public class CongressDbContext : DbContext
     {
         modelBuilder.Entity<Bill>(e =>
         {
-            e.ToTable("bills");
-            e.HasKey(b => b.BillId);
-            e.Property(b => b.BillId).HasColumnName("bill_id");
-            e.Property(b => b.Title).HasColumnName("title");
-            e.Property(b => b.Sponsor).HasColumnName("sponsor");
-            e.Property(b => b.Passed).HasColumnName("passed");
-            e.Property(b => b.PassageProbability).HasColumnName("passage_probability");
+            e.ToTable("Bills", "Silver", t => t.ExcludeFromMigrations());
+            e.HasNoKey();               // Silver.Bills has no PK — this is a reporting/read table
+            e.Property(b => b.BillNumber).HasColumnName("BillNumber");
+            e.Property(b => b.UpdateDate).HasColumnName("UpdateDate");
+            e.Property(b => b.OriginChamber).HasColumnName("OriginChamber");
+            e.Property(b => b.IntroducedDate).HasColumnName("IntroducedDate");
+            e.Property(b => b.LegislationUrl).HasColumnName("LegislationUrl");
+            e.Property(b => b.PolicyArea).HasColumnName("PolicyArea");
+            e.Property(b => b.Title).HasColumnName("Title");
+            e.Property(b => b.LatestActionDate).HasColumnName("LatestActionDate");
+            e.Property(b => b.LatestAction).HasColumnName("LatestAction");
+            e.Property(b => b.FileId).HasColumnName("FileId");
         });
     }
 }

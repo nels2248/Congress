@@ -18,6 +18,8 @@ public class IndexModel : PageModel
 
     public async Task OnGetAsync()
     {
-        Bills = await _db.Bills.ToListAsync();
+        Bills = await _db.Bills
+            .OrderByDescending(b => b.LatestActionDate)
+            .ToListAsync();
     }
 }
