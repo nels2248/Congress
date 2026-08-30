@@ -299,27 +299,54 @@ def main(mytimer: func.TimerRequest) -> None:
             xml_names = [n for n in zf.namelist() if n.endswith(".xml")]
             logging.info("Zip contains %s XML files", len(xml_names))
 
-            for entry_name in xml_names:
+            for entry_name in xml_names:                
+                logging.info("Starting XML file: %s", entry_name)
+
                 raw_bytes = zf.read(entry_name)
 
-                try:
-                    result = process_xml_bytes(connection, entry_name, URL, raw_bytes)
+                try:                    
+                    result = process_xml_bytes(
+                        connection,
+                        entry_name,
+                        URL,
+                        raw_bytes
+                    )
                 except Exception as ex:
                     errors += 1
-                    logging.error("  ERROR on %s: %s", entry_name, ex)
+                    logging.error(
+                        "ERROR on %s: %s",
+                        entry_name,
+                        ex,
+                        exc_info=True
+                    )
                     continue
 
                 if result["status"] == "loaded":
                     loaded += 1
                     total_elements += result["elements"]
                     total_values += result["values"]
+
+                    logging.info(
+                        "Completed XML file: %s — elements=%s values=%s",
+                        entry_name,
+                        result["elements"],
+                        result["values"],
+                    )
+
                 elif result["status"] == "error":
                     errors += 1
+                    logging.error(
+                        "XML parse error: %s",
+                        entry_name
+                    )
 
         logging.info(
             "Load complete — loaded=%s errors=%s elements=%s values=%s",
-            loaded, errors, total_elements, total_values,
-        )
+            loaded,
+            errors,
+            total_elements,
+            total_values,
+        ) 
 
         # BUILD SILVER LAYER — only runs if the Bronze load above completed
         # without raising, so Silver never rebuilds from a partial/broken load
