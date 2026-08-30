@@ -30,7 +30,7 @@ ViewData["Title"] = "Congress 119";
                 <td>@bill.PolicyArea</td>
                 <td>@bill.IntroducedDate?.ToString("d")</td>
                 <td>@bill.LatestAction</td>
-                <td>@bill.LatestActionDate</td>
+                <td>@bill.LatestActionDate?.ToString("MM/dd/yyyy")</td>
             </tr>
         }
     </tbody>
