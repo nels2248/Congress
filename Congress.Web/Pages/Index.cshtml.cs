@@ -7,20 +7,24 @@ namespace Congress.Web.Pages;
 
 public class IndexModel : PageModel
 {
-    private readonly CongressDbContext _db;
+private readonly CongressDbContext _db;
 
-    public IndexModel(CongressDbContext db)
-    {
-        _db = db;
-    }
+public IndexModel(CongressDbContext db)
+{
+    _db = db;
+}
 
-    public List<Bill> Bills { get; set; } = new();
+public List<Bill> Bills { get; set; } = new();
 
-    public async Task OnGetAsync()
-    {
-        Bills = await _db.Bills
-            .OrderByDescending(b => b.LatestActionDate)
-            .Take(100)
-            .ToListAsync();
-    }
+public int TotalBills { get; set; }
+
+public async Task OnGetAsync()
+{
+    TotalBills = await _db.Bills.CountAsync();
+
+    Bills = await _db.Bills
+        .OrderByDescending(b => b.LatestActionDate)
+        .Take(5)
+        .ToListAsync();
+}
 }

@@ -6,6 +6,8 @@ ViewData["Title"] = "Congress 119";
 
 <h1>Congress 119 Bill Tracker</h1>
 
+<p> <strong>@Model.TotalBills.ToString("N0") Total Bills</strong> &nbsp;·&nbsp; Showing the 5 most recently active </p>
+
 <table class="table table-striped">
     <thead>
         <tr>
@@ -15,6 +17,7 @@ ViewData["Title"] = "Congress 119";
             <th>Policy Area</th>
             <th>Introduced</th>
             <th>Latest Action</th>
+            <th>Latest Action Date</th>
         </tr>
     </thead>
     <tbody>
@@ -27,6 +30,7 @@ ViewData["Title"] = "Congress 119";
                 <td>@bill.PolicyArea</td>
                 <td>@bill.IntroducedDate?.ToString("d")</td>
                 <td>@bill.LatestAction</td>
+                <td>@bill.LatestActionDate</td>
             </tr>
         }
     </tbody>
