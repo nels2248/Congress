@@ -197,20 +197,7 @@ def insert_element(cursor, file_id, parent_element_id, xml_path, element_name, o
     return cursor.fetchone()[0]
 
 
-def insert_value(cursor, element_id, xml_path, value):
-    if value is None:
-        return
-    value = value.strip()
-    if value == "":
-        return
-    data_type = infer_data_type(value)
-    cursor.execute(
-        "INSERT INTO Bronze.XmlValue (ElementId, XmlPath, Value, DataType) VALUES (?, ?, ?, ?)",
-        element_id, xml_path, value, data_type,
-    )
-
-
-def process_element(cursor, element, file_id, parent_element_id, parent_path, occurrence_tracker):
+def process_element(cursor, element, file_id, parent_element_id, parent_path, occurrence_tracker, value_rows):
     element_name = strip_namespace(element.tag)
     xml_path = f"{parent_path}/{element_name}" if parent_path else element_name
 
@@ -226,18 +213,33 @@ def process_element(cursor, element, file_id, parent_element_id, parent_path, oc
     values_processed = 0
 
     if element.text and element.text.strip():
-        insert_value(cursor, element_id, xml_path, element.text)
+        value = element.text.strip()
+        data_type = infer_data_type(value)
+        value_rows.append((element_id, xml_path, value, data_type))
         values_processed += 1
 
     for child in element:
         child_elements, child_values = process_element(
-            cursor, child, file_id, element_id, xml_path, occurrence_tracker
+            cursor, child, file_id, element_id, xml_path, occurrence_tracker, value_rows
         )
         elements_processed += child_elements
         values_processed += child_values
 
     return elements_processed, values_processed
 
+def bulk_insert_values(cursor, value_rows):
+    if not value_rows:
+        return
+
+    cursor.fast_executemany = True
+
+    cursor.executemany(
+        """
+        INSERT INTO Bronze.XmlValue (ElementId, XmlPath, Value, DataType)
+        VALUES (?, ?, ?, ?)
+        """,
+        value_rows,
+    )
 
 def process_xml_bytes(connection, entry_name, source_url, raw_bytes):
     try:
@@ -250,10 +252,14 @@ def process_xml_bytes(connection, entry_name, source_url, raw_bytes):
 
     cursor = connection.cursor()
     occurrence_tracker = {}
+    value_rows = []
     try:
         elements_processed, values_processed = process_element(
-            cursor, root, file_id, None, "", occurrence_tracker
+            cursor, root, file_id, None, "", occurrence_tracker, value_rows
         )
+
+        bulk_insert_values(cursor, value_rows)
+
         connection.commit()
         cursor.close()
         return {"status": "loaded", "elements": elements_processed, "values": values_processed}
