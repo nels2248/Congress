@@ -10,12 +10,29 @@ import requests
 import azure.functions as func
 import time
 
-URLS = [
+URLS = {
     "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hconres/BILLSTATUS-119-hconres.zip",
     "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hjres/BILLSTATUS-119-hjres.zip",
-]
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hr/BILLSTATUS-119-hr.zip",
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hres/BILLSTATUS-119-hres.zip",
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/s/BILLSTATUS-119-s.zip",
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/sconres/BILLSTATUS-119-sconres.zip",
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/sjres/BILLSTATUS-119-sjres.zip",
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/sres/BILLSTATUS-119-sres.zip",
+}
 
 VERBOSE = False
+
+
+class IdCounter:
+    """Generates sequential IDs in Python so we can batch-insert elements
+    instead of doing one INSERT per element to get back an IDENTITY value."""
+    def __init__(self, start=0):
+        self.value = start
+
+    def next(self):
+        self.value += 1
+        return self.value
 
 
 # ============================================================
@@ -77,8 +94,8 @@ BEGIN
         DataType   VARCHAR(50) NULL,
         CONSTRAINT FK_XmlValue_Element FOREIGN KEY (ElementId) REFERENCES Bronze.XmlElement(ElementId)
     );
-    CREATE INDEX IX_XmlValue_ElementId ON Bronze.XmlValue(ElementId);
-    CREATE INDEX IX_XmlValue_XmlPath ON Bronze.XmlValue(XmlPath);
+    CREATE INDEX IX_XmlValue_ElementId ON Bronze.XmlValue(ElementId); 
+    CREATE INDEX IX_XmlValue_XmlPath_Covering ON Bronze.XmlValue(XmlPath) INCLUDE (ElementId, Value);
 END
 """
 
@@ -190,19 +207,23 @@ def insert_file(connection, entry_name, source_url, size_bytes):
 # XML PROCESSING
 # ============================================================
 
-def insert_element(cursor, file_id, parent_element_id, xml_path, element_name, occurrence):
-    cursor.execute(
+def bulk_insert_elements(cursor, element_rows):
+    if not element_rows:
+        return
+
+    cursor.execute("SET IDENTITY_INSERT Bronze.XmlElement ON")
+    cursor.fast_executemany = True
+    cursor.executemany(
         """
-        INSERT INTO Bronze.XmlElement (FileId, ParentElementId, XmlPath, ElementName, Occurrence)
-        OUTPUT INSERTED.ElementId
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO Bronze.XmlElement (ElementId, FileId, ParentElementId, XmlPath, ElementName, Occurrence)
+        VALUES (?, ?, ?, ?, ?, ?)
         """,
-        file_id, parent_element_id, xml_path, element_name, occurrence,
+        element_rows,
     )
-    return cursor.fetchone()[0]
+    cursor.execute("SET IDENTITY_INSERT Bronze.XmlElement OFF")
 
 
-def process_element(cursor, element, file_id, parent_element_id, parent_path, occurrence_tracker, value_rows):
+def process_element(element, file_id, parent_element_id, parent_path, occurrence_tracker, id_counter, element_rows, value_rows):
     element_name = strip_namespace(element.tag)
     xml_path = f"{parent_path}/{element_name}" if parent_path else element_name
 
@@ -212,7 +233,8 @@ def process_element(cursor, element, file_id, parent_element_id, parent_path, oc
     if VERBOSE:
         logging.info("    %s", xml_path)
 
-    element_id = insert_element(cursor, file_id, parent_element_id, xml_path, element_name, occurrence)
+    element_id = id_counter.next()
+    element_rows.append((element_id, file_id, parent_element_id, xml_path, element_name, occurrence))
 
     elements_processed = 1
     values_processed = 0
@@ -225,7 +247,7 @@ def process_element(cursor, element, file_id, parent_element_id, parent_path, oc
 
     for child in element:
         child_elements, child_values = process_element(
-            cursor, child, file_id, element_id, xml_path, occurrence_tracker, value_rows
+            child, file_id, element_id, xml_path, occurrence_tracker, id_counter, element_rows, value_rows
         )
         elements_processed += child_elements
         values_processed += child_values
@@ -246,7 +268,7 @@ def bulk_insert_values(cursor, value_rows):
         value_rows,
     )
 
-def process_xml_bytes(connection, entry_name, source_url, raw_bytes):
+def process_xml_bytes(connection, entry_name, source_url, raw_bytes, id_counter):
     try:
         root = ET.fromstring(raw_bytes)
     except ET.ParseError as ex:
@@ -257,12 +279,14 @@ def process_xml_bytes(connection, entry_name, source_url, raw_bytes):
 
     cursor = connection.cursor()
     occurrence_tracker = {}
+    element_rows = []
     value_rows = []
     try:
         elements_processed, values_processed = process_element(
-            cursor, root, file_id, None, "", occurrence_tracker, value_rows
+            root, file_id, None, "", occurrence_tracker, id_counter, element_rows, value_rows
         )
 
+        bulk_insert_elements(cursor, element_rows)
         bulk_insert_values(cursor, value_rows)
 
         connection.commit()
@@ -295,6 +319,7 @@ def main(mytimer: func.TimerRequest) -> None:
 
         loaded = errors = 0
         total_elements = total_values = 0
+        id_counter = IdCounter()
 
         for url in URLS:
             logging.info("Downloading %s", url)
@@ -304,9 +329,11 @@ def main(mytimer: func.TimerRequest) -> None:
 
             with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
                 xml_names = [n for n in zf.namelist() if n.endswith(".xml")]
-                logging.info("Zip contains %s XML files", len(xml_names))
+                file_count = len(xml_names)
+                zip_start_time = time.time()
+                logging.info("Zip contains %s XML files", file_count)
 
-                for entry_name in xml_names:
+                for i, entry_name in enumerate(xml_names, 1):
                     logging.info("Starting XML file: %s", entry_name)
 
                     raw_bytes = zf.read(entry_name)
@@ -316,7 +343,8 @@ def main(mytimer: func.TimerRequest) -> None:
                             connection,
                             entry_name,
                             url,
-                            raw_bytes
+                            raw_bytes,
+                            id_counter
                         )
                     except Exception as ex:
                         errors += 1
@@ -344,8 +372,15 @@ def main(mytimer: func.TimerRequest) -> None:
                         errors += 1
                         logging.error(
                             "XML parse error: %s",
-                        entry_name
-                    )
+                            entry_name
+                        )
+
+                    if i % 50 == 0 or i == file_count:
+                        elapsed = time.time() - zip_start_time
+                        logging.info(
+                            "Progress: %s/%s files (%.0f%%) — %.1fs elapsed, %.2f files/sec",
+                            i, file_count, i / file_count * 100, elapsed, i / elapsed if elapsed > 0 else 0
+                        )
 
         logging.info(
             "Load complete — loaded=%s errors=%s elements=%s values=%s",
