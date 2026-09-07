@@ -10,7 +10,10 @@ import requests
 import azure.functions as func
 import time
 
-URL = "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hconres/BILLSTATUS-119-hconres.zip"
+URLS = [
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hconres/BILLSTATUS-119-hconres.zip",
+    "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hjres/BILLSTATUS-119-hjres.zip",
+]
 
 VERBOSE = False
 
@@ -283,10 +286,6 @@ def main(mytimer: func.TimerRequest) -> None:
 
     logging.info("Starting Congress XML load at %s", utc_timestamp)
 
-    response = requests.get(URL)
-    response.raise_for_status()
-    logging.info("Downloaded %.1f KB", len(response.content) / 1024)
-
     connection_string = os.environ["CONGRESS_SQL_CONNECTION_STRING"]
     connection = connect_with_retry(connection_string)
 
@@ -297,48 +296,54 @@ def main(mytimer: func.TimerRequest) -> None:
         loaded = errors = 0
         total_elements = total_values = 0
 
-        with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
-            xml_names = [n for n in zf.namelist() if n.endswith(".xml")]
-            logging.info("Zip contains %s XML files", len(xml_names))
+        for url in URLS:
+            logging.info("Downloading %s", url)
+            response = requests.get(url)
+            response.raise_for_status()
+            logging.info("Downloaded %.1f KB", len(response.content) / 1024)
 
-            for entry_name in xml_names:                
-                logging.info("Starting XML file: %s", entry_name)
+            with zipfile.ZipFile(io.BytesIO(response.content)) as zf:
+                xml_names = [n for n in zf.namelist() if n.endswith(".xml")]
+                logging.info("Zip contains %s XML files", len(xml_names))
 
-                raw_bytes = zf.read(entry_name)
+                for entry_name in xml_names:
+                    logging.info("Starting XML file: %s", entry_name)
 
-                try:                    
-                    result = process_xml_bytes(
-                        connection,
-                        entry_name,
-                        URL,
-                        raw_bytes
-                    )
-                except Exception as ex:
-                    errors += 1
-                    logging.error(
-                        "ERROR on %s: %s",
-                        entry_name,
-                        ex,
-                        exc_info=True
-                    )
-                    continue
+                    raw_bytes = zf.read(entry_name)
 
-                if result["status"] == "loaded":
-                    loaded += 1
-                    total_elements += result["elements"]
-                    total_values += result["values"]
+                    try:                    
+                        result = process_xml_bytes(
+                            connection,
+                            entry_name,
+                            url,
+                            raw_bytes
+                        )
+                    except Exception as ex:
+                        errors += 1
+                        logging.error(
+                            "ERROR on %s: %s",
+                            entry_name,
+                            ex,
+                            exc_info=True
+                        )
+                        continue
 
-                    logging.info(
-                        "Completed XML file: %s — elements=%s values=%s",
-                        entry_name,
-                        result["elements"],
-                        result["values"],
-                    )
+                    if result["status"] == "loaded":
+                        loaded += 1
+                        total_elements += result["elements"]
+                        total_values += result["values"]
 
-                elif result["status"] == "error":
-                    errors += 1
-                    logging.error(
-                        "XML parse error: %s",
+                        logging.info(
+                            "Completed XML file: %s — elements=%s values=%s",
+                            entry_name,
+                            result["elements"],
+                            result["values"],
+                        )
+
+                    elif result["status"] == "error":
+                        errors += 1
+                        logging.error(
+                            "XML parse error: %s",
                         entry_name
                     )
 
