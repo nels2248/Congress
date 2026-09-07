@@ -96,14 +96,16 @@ TRUNCATE_SQL = [
 def connect_with_retry(connection_string, max_attempts=5, delay_seconds=15):
     """Azure SQL serverless databases auto-pause when idle. The first
     connection after a pause triggers a resume but fails immediately
-    with error 40613 - retry a few times while it wakes up."""
+    with error 40613, or the ODBC driver simply times out waiting
+    (HYT00 / 08001 / 08S01) - retry a few times while it wakes up."""
     last_error = None
+    RESUME_CODES = ("40613", "HYT00", "08001", "08S01")
     for attempt in range(1, max_attempts + 1):
         try:
-            return pyodbc.connect(connection_string)
+            return pyodbc.connect(connection_string, timeout=60)
         except pyodbc.Error as e:
             last_error = e
-            if "40613" in str(e):
+            if any(code in str(e) for code in RESUME_CODES):
                 logging.info(
                     "Database is resuming (attempt %s/%s), waiting %ss...",
                     attempt, max_attempts, delay_seconds
