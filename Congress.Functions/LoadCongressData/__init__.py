@@ -121,6 +121,7 @@ def connect_with_retry(connection_string, max_attempts=5, delay_seconds=15):
     last_error = None
     RESUME_CODES = ("40613", "HYT00", "08001", "08S01")
     for attempt in range(1, max_attempts + 1):
+        logging.info("Attempting database connection (attempt %s/%s)...", attempt, max_attempts)
         try:
             return pyodbc.connect(connection_string, timeout=60)
         except pyodbc.Error as e:
