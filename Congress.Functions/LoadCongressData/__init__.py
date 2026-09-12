@@ -2,6 +2,8 @@ import datetime
 import io
 import logging
 import os
+import re
+import socket
 import zipfile
 import xml.etree.ElementTree as ET
 
@@ -113,6 +115,48 @@ TRUNCATE_SQL = [
 # ============================================================
 # HELPERS
 # ============================================================
+def extract_server_host(connection_string):
+    """Pulls the SERVER= value out of an ODBC connection string and strips
+    a trailing ,port if present, so we can do a raw TCP check against it.
+    Returns (host, port) or (None, None) if it can't be parsed."""
+    match = re.search(r"SERVER=([^;]+)", connection_string, re.IGNORECASE)
+    if not match:
+        return None, None
+
+    raw_server = match.group(1).strip()
+
+    # Handle "tcp:hostname,1433" or "hostname,1433" or just "hostname"
+    raw_server = raw_server.replace("tcp:", "")
+    if "," in raw_server:
+        host, port_str = raw_server.split(",", 1)
+        try:
+            port = int(port_str)
+        except ValueError:
+            port = 1433
+        return host.strip(), port
+
+    return raw_server, 1433
+
+
+def check_tcp_reachable(host, port=1433, timeout=10):
+    """Raw TCP connectivity check, independent of pyodbc/ODBC driver.
+    Used to tell apart a network-layer hang (firewall dropping packets)
+    from a slower SQL-level negotiation issue."""
+    if not host:
+        logging.warning("TCP check skipped — could not parse server host from connection string")
+        return None
+    start = time.time()
+    try:
+        with socket.create_connection((host, port), timeout=timeout):
+            elapsed = time.time() - start
+            logging.info("TCP check to %s:%s succeeded in %.2fs", host, port, elapsed)
+            return True
+    except Exception as e:
+        elapsed = time.time() - start
+        logging.warning("TCP check to %s:%s failed after %.2fs: %s", host, port, elapsed, e)
+        return False
+
+
 def connect_with_retry(connection_string, max_attempts=5, delay_seconds=15):
     """Azure SQL serverless databases auto-pause when idle. The first
     connection after a pause triggers a resume but fails immediately
@@ -120,8 +164,16 @@ def connect_with_retry(connection_string, max_attempts=5, delay_seconds=15):
     (HYT00 / 08001 / 08S01) - retry a few times while it wakes up."""
     last_error = None
     RESUME_CODES = ("40613", "HYT00", "08001", "08S01")
+    server_host, server_port = extract_server_host(connection_string)
+
     for attempt in range(1, max_attempts + 1):
         logging.info("Attempting database connection (attempt %s/%s)...", attempt, max_attempts)
+
+        # Raw TCP check first — tells us if this is a network-layer hang
+        # (firewall dropping packets) vs. a SQL-level auth/negotiation issue,
+        # independent of whatever pyodbc/the ODBC driver does next.
+        check_tcp_reachable(server_host, server_port, timeout=15)
+
         try:
             return pyodbc.connect(connection_string, timeout=60)
         except pyodbc.Error as e:
