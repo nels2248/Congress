@@ -1,0 +1,120 @@
+@page
+@model Congress.Web.Pages.Bills.DetailsModel
+
+@{
+    ViewData["Title"] = "Bill Prediction Details";
+}
+
+@if (Model.Bill == null)
+{
+    <h1>Bill Not Found</h1>
+
+    <div class="alert alert-warning">
+        The requested bill prediction could not be found.
+    </div>
+
+    <a asp-page="/Bills/Index" class="btn btn-primary">
+        Back to Bill Predictions
+    </a>
+}
+else
+{
+    <div class="mb-3">
+        <a asp-page="/Bills/Index">&larr; Back to Bill Predictions</a>
+    </div>
+
+    <h1>@Model.Bill.Title</h1>
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title">Model Prediction</h5>
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="text-muted">Predicted Likelihood</div>
+                    <div class="display-6">
+                        @(Model.Bill.PredictedProbability?.ToString("P1") ?? "N/A")
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted">Model Category</div>
+                    <div class="fs-3">
+                        @Model.Bill.PredictedOutcome
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="text-muted">Bill File ID</div>
+                    <div class="fs-3">
+                        @Model.Bill.FileId
+                    </div>
+                </div>
+            </div>
+
+            <hr />
+
+            <p class="text-muted mb-0">
+                This is a machine-learning model output, not a statement of
+                what will happen to the bill. The factors below show which
+                model features contributed most to this prediction.
+            </p>
+        </div>
+    </div>
+
+    <h2>Top Model Factors</h2>
+
+    @if (Model.Reasons.Count == 0)
+    {
+        <div class="alert alert-info">
+            No explanation factors are available for this prediction.
+        </div>
+    }
+    else
+    {
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Feature</th>
+                        <th>Direction</th>
+                        <th>Contribution</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    @foreach (var reason in Model.Reasons)
+                    {
+                        <tr>
+                            <td>@reason.ReasonRank</td>
+
+                            <td>
+                                @reason.FeatureName
+                            </td>
+
+                            <td>
+                                @if (reason.Direction == "Positive")
+                                {
+                                    <span class="text-success">
+                                        Positive
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="text-danger">
+                                        Negative
+                                    </span>
+                                }
+                            </td>
+
+                            <td>
+                                @(reason.Contribution?.ToString("0.0000") ?? "N/A")
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+}

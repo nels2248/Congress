@@ -1,0 +1,141 @@
+@page
+@model Congress.Web.Pages.Bills.IndexModel
+
+@{
+    ViewData["Title"] = "Bill Predictions";
+}
+
+<h1>Bill Passage Predictions</h1>
+
+<p class="text-muted">
+    Machine-learning predictions generated from the latest congressional data.
+</p>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Total Bills</div>
+                <div class="fs-2">@Model.TotalBills.ToString("N0")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">High</div>
+                <div class="fs-2">@Model.HighCount.ToString("N0")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Moderate</div>
+                <div class="fs-2">@Model.ModerateCount.ToString("N0")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-2">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Low</div>
+                <div class="fs-2">@Model.LowCount.ToString("N0")</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body">
+                <div class="text-muted">Very Low</div>
+                <div class="fs-2">@Model.VeryLowCount.ToString("N0")</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h2>Top 10 Most Likely to Pass</h2>
+
+@if (Model.Bills.Count == 0)
+{
+    <div class="alert alert-info">
+        No bill predictions are currently available.
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover align-middle">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Bill</th>
+                    <th>Title</th>
+                    <th>Predicted Likelihood</th>
+                    <th>Model Category</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                @{
+                    var rank = 1;
+                }
+
+                @foreach (var bill in Model.Bills)
+                {
+                    <tr>
+                        <td>@rank</td>
+
+                        <td>
+                            <a asp-page="/Bills/Details"
+                               asp-route-id="@bill.FileId">
+                                @bill.FileId
+                            </a>
+                        </td>
+
+                        <td>
+                            <a asp-page="/Bills/Details"
+                               asp-route-id="@bill.FileId"
+                               class="text-decoration-none">
+                                @bill.Title
+                            </a>
+                        </td>
+
+                        <td>
+                            <strong>
+                                @(bill.PredictedProbability?.ToString("P1") ?? "N/A")
+                            </strong>
+                        </td>
+
+                        <td>
+                            @if (bill.PredictedOutcome == "High")
+                            {
+                                <span class="badge bg-success">High</span>
+                            }
+                            else if (bill.PredictedOutcome == "Moderate")
+                            {
+                                <span class="badge bg-primary">Moderate</span>
+                            }
+                            else if (bill.PredictedOutcome == "Low")
+                            {
+                                <span class="badge bg-warning text-dark">Low</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">
+                                    @bill.PredictedOutcome
+                                </span>
+                            }
+                        </td>
+                    </tr>
+
+                    rank++;
+                }
+            </tbody>
+        </table>
+    </div>
+} 
