@@ -11,6 +11,7 @@ import pyodbc
 import requests
 import azure.functions as func
 import time
+import concurrent.futures
 
 URLS = {
     "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hconres/BILLSTATUS-119-hconres.zip",
@@ -174,18 +175,27 @@ def connect_with_retry(connection_string, max_attempts=5, delay_seconds=15):
         # independent of whatever pyodbc/the ODBC driver does next.
         check_tcp_reachable(server_host, server_port, timeout=15)
 
-        try:
-            return pyodbc.connect(connection_string, timeout=60)
-        except pyodbc.Error as e:
-            last_error = e
-            if any(code in str(e) for code in RESUME_CODES):
-                logging.info(
-                    "Database is resuming (attempt %s/%s), waiting %ss...",
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(pyodbc.connect, connection_string, timeout=60)
+            try:
+                return future.result(timeout=75)
+            except concurrent.futures.TimeoutError:
+                last_error = TimeoutError("pyodbc.connect hung past hard timeout")
+                logging.warning(
+                    "Connection attempt %s/%s hung past hard timeout, treating as resumable, waiting %ss...",
                     attempt, max_attempts, delay_seconds
                 )
                 time.sleep(delay_seconds)
-            else:
-                raise
+            except pyodbc.Error as e:
+                last_error = e
+                if any(code in str(e) for code in RESUME_CODES):
+                    logging.info(
+                        "Database is resuming (attempt %s/%s), waiting %ss...",
+                        attempt, max_attempts, delay_seconds
+                    )
+                    time.sleep(delay_seconds)
+                else:
+                    raise
     raise last_error
 
 def strip_namespace(tag):
