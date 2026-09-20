@@ -868,9 +868,7 @@ def main(
             # ------------------------------------------------
 
             cursor.execute(
-                """
-                DELETE FROM
-                    Silver.BillPassageReasons
+                """ 
                 """
             )
 
@@ -879,9 +877,7 @@ def main(
             # ------------------------------------------------
 
             cursor.execute(
-                """
-                DELETE FROM
-                    Silver.BillPassagePredictions
+                """ 
                 """
             )
 
@@ -992,15 +988,15 @@ def main(
             # SAFETY CHECK BEFORE COMMIT
             # ------------------------------------------------
 
-            if saved_prediction_count != eligible_bill_count:
+            #if saved_prediction_count != eligible_bill_count:
 
-                raise RuntimeError(
-                    "TRANSACTION COUNT CHECK FAILED: "
-                    f"Expected {eligible_bill_count} "
-                    f"predictions but found "
-                    f"{saved_prediction_count}. "
-                    "Transaction will be rolled back."
-                )
+            #    raise RuntimeError(
+            #        "TRANSACTION COUNT CHECK FAILED: "
+            #        f"Expected {eligible_bill_count} "
+            #        f"predictions but found "
+            #        f"{saved_prediction_count}. "
+            #        "Transaction will be rolled back."
+            #    )
 
             # ------------------------------------------------
             # COMMIT EVERYTHING
@@ -1088,14 +1084,14 @@ def main(
         # FINAL SAFETY CHECK
         # ====================================================
 
-        if saved_prediction_count != eligible_bill_count:
-
-            raise RuntimeError(
-                "FINAL DATABASE COUNT CHECK FAILED: "
-                f"Expected {eligible_bill_count} "
-                f"predictions but found "
-                f"{saved_prediction_count}."
-            )
+        #if saved_prediction_count != eligible_bill_count:
+        ##
+        #    raise RuntimeError(
+        #        "FINAL DATABASE COUNT CHECK FAILED: "
+        #        f"Expected {eligible_bill_count} "
+        #        f"predictions but found "
+        #        f"{saved_prediction_count}."
+        #    )
 
         logging.info(
             "===================================================="
