@@ -104,12 +104,15 @@ END
 
 # Delete order matters — children before parents, due to foreign keys
 TRUNCATE_SQL = [
-    "DELETE FROM Bronze.XmlValue;",
-    "DELETE FROM Bronze.XmlElement;",
-    "DELETE FROM Bronze.XmlFile;",
-    "DBCC CHECKIDENT ('Bronze.XmlValue', RESEED, 0);",
-    "DBCC CHECKIDENT ('Bronze.XmlElement', RESEED, 0);",
-    "DBCC CHECKIDENT ('Bronze.XmlFile', RESEED, 0);",
+    "ALTER TABLE Bronze.XmlValue DROP CONSTRAINT FK_XmlValue_Element;",
+    "ALTER TABLE Bronze.XmlElement DROP CONSTRAINT FK_XmlElement_File;",
+    "TRUNCATE TABLE Bronze.XmlValue;",
+    "TRUNCATE TABLE Bronze.XmlElement;",
+    "TRUNCATE TABLE Bronze.XmlFile;",
+    "ALTER TABLE Bronze.XmlValue WITH CHECK ADD CONSTRAINT FK_XmlValue_Element "
+    "FOREIGN KEY (ElementId) REFERENCES Bronze.XmlElement(ElementId);",
+    "ALTER TABLE Bronze.XmlElement WITH CHECK ADD CONSTRAINT FK_XmlElement_File "
+    "FOREIGN KEY (FileId) REFERENCES Bronze.XmlFile(FileId);",
 ]
 
 
@@ -241,10 +244,18 @@ def setup_database(connection):
 
 def truncate_bronze(connection):
     """Wipes all three Bronze tables so this run starts completely fresh."""
+    logging.info("into truncate bronze")
     cursor = connection.cursor()
+    logging.info("past curstor connection in truncate bronze")
     for statement in TRUNCATE_SQL:
+        logging.info("into statement for loop")
+        logging.info(statement)
         cursor.execute(statement)
+        logging.info("statement completed in for loop on statement in bronze")
+    logging.info("for loop done in bronze")
     connection.commit()
+    logging.info("stuff committed in bronze")
+
     cursor.close()
     logging.info("Bronze tables cleared — starting fresh load")
 
@@ -372,13 +383,17 @@ def main(mytimer: func.TimerRequest) -> None:
         logging.info("The timer is past due!")
 
     logging.info("Starting Congress XML load at %s", utc_timestamp)
-
+    logging.info("Before the connection string")
     connection_string = os.environ["CONGRESS_SQL_CONNECTION_STRING"]
+    logging.info("After the connection string")
     connection = connect_with_retry(connection_string)
-
+    logging.info("after connection object created")
     try:
+        logging.info("into the try on main")
         setup_database(connection)
+        logging.info("past the setup_datbase call")
         truncate_bronze(connection)
+        logging.info("truncating bronze")
 
         loaded = errors = 0
         total_elements = total_values = 0
