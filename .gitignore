@@ -5,3 +5,6 @@ appsettings.Development.json
 .vs/
 publish/
 *.zip
+
+Congress.Web/MapData/Extracted/
+Congress.Web/wwwroot/data/congressional-districts-120.geojson

@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Congress.Web.Data;
+using Microsoft.AspNetCore.StaticFiles;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -7,7 +8,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddDbContext<CongressDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("AzureSql")));
-
+builder.Services.AddHttpClient();
 var app = builder.Build();   // <-- EVERYTHING ABOVE THIS LINE IS "REGISTER SERVICES"
                               //     EVERYTHING BELOW THIS LINE IS "CONFIGURE THE PIPELINE"
 
@@ -18,7 +19,13 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseStaticFiles();
+var provider = new FileExtensionContentTypeProvider();
+provider.Mappings[".geojson"] = "application/geo+json";
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = provider
+});
 app.UseRouting();
 app.UseAuthorization();
 app.MapRazorPages();

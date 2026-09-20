@@ -1,0 +1,150 @@
+@page
+@model Congress.Web.Pages.Map.IndexModel
+
+@{
+    ViewData["Title"] = "Congressional District Map";
+}
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+<div class="container-fluid px-0">
+
+    <div class="mb-4">
+        <h1 class="display-5 fw-bold">Congressional District Map</h1>
+
+        <p class="lead text-muted">
+            Current U.S. House congressional district boundaries.
+        </p>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div id="districtMap"
+                 style="height: 700px; width: 100%;">
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+    console.log("Map script starting");
+
+    var map = L.map("districtMap").setView(
+        [39.8283, -98.5795],
+        4
+    );
+
+    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "&copy; OpenStreetMap contributors"
+    }).addTo(map);
+
+    console.log("Leaflet map initialized");
+
+    fetch("/data/congressional-districts-120.geojson")
+        .then(function (response) {
+
+            console.log(
+                "District response:",
+                response.status
+            );
+
+            if (!response.ok) {
+                throw new Error(
+                    "District request failed: " +
+                    response.status
+                );
+            }
+
+            return response.json();
+        })
+        .then(function (data) {
+
+            console.log(
+                "Congressional district data:",
+                data
+            );
+
+            L.geoJSON(data, {
+
+                style: function () {
+                    return {
+                        color: "#333",
+                        weight: 1,
+                        opacity: 0.8,
+                        fillOpacity: 0.15
+                    };
+                },
+
+                onEachFeature: function (feature, layer) {
+
+                    var properties =
+                        feature.properties || {};
+
+                    var district =
+                        properties.CD120 ||
+                        properties.CD119 ||
+                        properties.CD ||
+                        "Unknown";
+
+                    var name =
+                        properties.NAME ||
+                        "Congressional District";
+
+                    layer.bindPopup(
+                        "<strong>" +
+                        name +
+                        "</strong><br>" +
+                        "District: " +
+                        district
+                    );
+
+                    layer.on(
+                        "mouseover",
+                        function (e) {
+
+                            e.target.setStyle({
+                                weight: 3,
+                                fillOpacity: 0.35
+                            });
+
+                        }
+                    );
+
+                    layer.on(
+                        "mouseout",
+                        function (e) {
+
+                            e.target.setStyle({
+                                weight: 1,
+                                fillOpacity: 0.15
+                            });
+
+                        }
+                    );
+                }
+
+            }).addTo(map);
+
+        })
+        .catch(function (error) {
+
+            console.error(
+                "Unable to load congressional districts:",
+                error
+            );
+
+            document.getElementById(
+                "districtMap"
+            ).innerHTML =
+                '<div class="p-4 text-danger">' +
+                '<strong>' +
+                'Unable to load congressional district data.' +
+                '</strong><br>' +
+                error.message +
+                '</div>';
+        });
+</script> 
