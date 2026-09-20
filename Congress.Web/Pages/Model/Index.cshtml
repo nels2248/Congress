@@ -1,0 +1,830 @@
+@page
+@model Congress.Web.Pages.Model.IndexModel
+
+@{
+    ViewData["Title"] = "How the Model Works";
+}
+
+<div class="mb-5">
+
+    <h1>How the Bill Prediction Model Works</h1>
+
+    <p class="lead text-muted">
+        From congressional data to machine-learning prediction.
+    </p>
+
+    <p>
+        This application uses logistic regression to estimate the likelihood
+        that a congressional bill will become law. The model uses information
+        about the bill to calculate a probability between 0% and 100%.
+    </p>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- 01 - THE PIPELINE                                         -->
+<!-- ========================================================= -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <h2 class="h4 mb-4">
+            01 &nbsp; From Data to Prediction
+        </h2>
+
+        <div class="row text-center g-3">
+
+            <div class="col-md-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <div class="fs-1 mb-2">
+                        📄
+                    </div>
+
+                    <h5>Congressional Data</h5>
+
+                    <p class="text-muted mb-0">
+                        Bill information is loaded from congressional
+                        XML data into the Fabric data platform.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <div class="fs-1 mb-2">
+                        ⚙️
+                    </div>
+
+                    <h5>Model Features</h5>
+
+                    <p class="text-muted mb-0">
+                        Bill type, originating chamber, and policy area
+                        are converted into machine-learning features.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <div class="fs-1 mb-2">
+                        🧠
+                    </div>
+
+                    <h5>Logistic Regression</h5>
+
+                    <p class="text-muted mb-0">
+                        The model combines learned coefficients with
+                        the characteristics of each bill.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <div class="fs-1 mb-2">
+                        📊
+                    </div>
+
+                    <h5>Probability</h5>
+
+                    <p class="text-muted mb-0">
+                        The model produces a probability from
+                        0% to 100%.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- 02 - FEATURES                                             -->
+<!-- ========================================================= -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <h2 class="h4 mb-4">
+            02 &nbsp; What Information Does the Model Use?
+        </h2>
+
+        <div class="row">
+
+            <div class="col-md-4 mb-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <h5>Bill Type</h5>
+
+                    <p class="text-muted">
+                        Examples include:
+                    </p>
+
+                    <div class="d-flex flex-wrap gap-2">
+
+                        <span class="badge bg-secondary">HR</span>
+                        <span class="badge bg-secondary">S</span>
+                        <span class="badge bg-secondary">HRES</span>
+                        <span class="badge bg-secondary">SRES</span>
+                        <span class="badge bg-secondary">HJRES</span>
+                        <span class="badge bg-secondary">SJRES</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4 mb-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <h5>Origin Chamber</h5>
+
+                    <p class="text-muted">
+                        The chamber where the legislation originated.
+                    </p>
+
+                    <div class="d-flex gap-2">
+
+                        <span class="badge bg-secondary">House</span>
+                        <span class="badge bg-secondary">Senate</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-4 mb-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <h5>Policy Area</h5>
+
+                    <p class="text-muted">
+                        The congressional policy area associated with
+                        the legislation.
+                    </p>
+
+                    <span class="badge bg-secondary">
+                        Example: Energy
+                    </span>
+
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="alert alert-secondary mt-3 mb-0">
+
+            <strong>Feature engineering:</strong>
+
+            Categorical values are converted into individual
+            indicator features such as
+            <code>Type_HCONRES</code>,
+            <code>OriginChamber_House</code>, and
+            <code>PolicyArea_Energy</code>.
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- 03 - LEARNED COEFFICIENTS                                 -->
+<!-- ========================================================= -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+
+            <div>
+                <h2 class="h4 mb-1">
+                    03 &nbsp; What Did the Model Learn?
+                </h2>
+
+                <p class="text-muted mb-0">
+                    Explore the learned influence of each feature group.
+                </p>
+            </div>
+
+            @if (Model.LatestRunId != null)
+            {
+                <div class="text-end">
+
+                    <div class="text-muted small">
+                        Model Run
+                    </div>
+
+                    <strong>
+                        @Model.LatestRunId
+                    </strong>
+
+                    @if (Model.RunAt != null)
+                    {
+                        <div class="small text-muted">
+                            @Model.RunAt.Value.ToString("MMM d, yyyy")
+                        </div>
+                    }
+
+                </div>
+            }
+
+        </div>
+
+
+        @if (Model.Coefficients.Count == 0)
+        {
+            <div class="alert alert-info">
+                No model coefficients are currently available.
+            </div>
+        }
+        else
+        {
+            <p class="mb-4">
+                The model learned a coefficient for each indicator feature.
+                Positive values push the underlying score higher, while
+                negative values push it lower.
+            </p>
+
+
+            <div class="accordion" id="coefficientGroups">
+
+                @for (int i = 0; i < Model.CoefficientGroups.Count; i++)
+                {
+                    var group = Model.CoefficientGroups[i];
+                    var collapseId = $"coefficientGroup{i}";
+                    var headingId = $"coefficientHeading{i}";
+
+                    <div class="accordion-item">
+
+                        <h2 class="accordion-header" id="@headingId">
+
+                            <button class="accordion-button collapsed"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#@collapseId"
+                                    aria-expanded="false"
+                                    aria-controls="@collapseId">
+
+                                <div class="w-100 pe-3">
+
+                                    <div class="d-flex justify-content-between align-items-center">
+
+                                        <strong>
+                                            @group.Name
+                                        </strong>
+
+                                        <span class="badge bg-secondary">
+                                            @group.Coefficients.Count features
+                                        </span>
+
+                                    </div>
+
+                                    <div class="small text-muted mt-1">
+                                        @group.Description
+                                    </div>
+
+                                </div>
+
+                            </button>
+
+                        </h2>
+
+
+                        <div id="@collapseId"
+                             class="accordion-collapse collapse"
+                             aria-labelledby="@headingId"
+                             data-bs-parent="#coefficientGroups">
+
+                            <div class="accordion-body">
+
+                                <div class="row g-4">
+
+                                    <!-- PUSHES TOWARD -->
+
+                                    <div class="col-lg-6">
+
+                                        <div class="border rounded p-3 h-100">
+
+                                            <h5 class="mb-1">
+                                                ↑ Pushes Toward Becoming Law
+                                            </h5>
+
+                                            <p class="text-muted small">
+                                                Positive coefficients increase
+                                                the model's underlying score.
+                                            </p>
+
+                                            @if (group.Positive.Count == 0)
+                                            {
+                                                <div class="text-muted">
+                                                    No positive coefficients.
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                foreach (var coefficient in group.Positive)
+                                                {
+                                                    var magnitude = Math.Abs(coefficient.Coefficient);
+
+                                                    var width = Model.MaxCoefficientMagnitude > 0
+                                                        ? magnitude / Model.MaxCoefficientMagnitude * 100
+                                                        : 0;
+
+                                                    var featureName = coefficient.FeatureName;
+
+                                                    var displayName = featureName.Contains("_")
+                                                        ? featureName[(featureName.IndexOf("_") + 1)..]
+                                                        : featureName;
+
+                                                    <div class="mb-3">
+
+                                                        <div class="d-flex justify-content-between mb-1">
+
+                                                            <code>
+                                                                @displayName
+                                                            </code>
+
+                                                            <strong class="text-success">
+                                                                +@coefficient.Coefficient.ToString("0.0000")
+                                                            </strong>
+
+                                                        </div>
+
+                                                        <div class="progress"
+                                                             style="height: 12px;">
+
+                                                            <div class="progress-bar bg-success"
+                                                                 role="progressbar"
+                                                                 style="width: @width.ToString("0.0")%;"
+                                                                 aria-valuenow="@width"
+                                                                 aria-valuemin="0"
+                                                                 aria-valuemax="100">
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+                                                }
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+
+                                    <!-- PUSHES AWAY -->
+
+                                    <div class="col-lg-6">
+
+                                        <div class="border rounded p-3 h-100">
+
+                                            <h5 class="mb-1">
+                                                ↓ Pushes Away From Becoming Law
+                                            </h5>
+
+                                            <p class="text-muted small">
+                                                Negative coefficients decrease
+                                                the model's underlying score.
+                                            </p>
+
+                                            @if (group.Negative.Count == 0)
+                                            {
+                                                <div class="text-muted">
+                                                    No negative coefficients.
+                                                </div>
+                                            }
+                                            else
+                                            {
+                                                foreach (var coefficient in group.Negative)
+                                                {
+                                                    var magnitude = Math.Abs(coefficient.Coefficient);
+
+                                                    var width = Model.MaxCoefficientMagnitude > 0
+                                                        ? magnitude / Model.MaxCoefficientMagnitude * 100
+                                                        : 0;
+
+                                                    var featureName = coefficient.FeatureName;
+
+                                                    var displayName = featureName.Contains("_")
+                                                        ? featureName[(featureName.IndexOf("_") + 1)..]
+                                                        : featureName;
+
+                                                    <div class="mb-3">
+
+                                                        <div class="d-flex justify-content-between mb-1">
+
+                                                            <code>
+                                                                @displayName
+                                                            </code>
+
+                                                            <strong class="text-danger">
+                                                                @coefficient.Coefficient.ToString("0.0000")
+                                                            </strong>
+
+                                                        </div>
+
+                                                        <div class="progress"
+                                                             style="height: 12px;">
+
+                                                            <div class="progress-bar bg-danger"
+                                                                 role="progressbar"
+                                                                 style="width: @width.ToString("0.0")%;"
+                                                                 aria-valuenow="@width"
+                                                                 aria-valuemin="0"
+                                                                 aria-valuemax="100">
+                                                            </div>
+
+                                                        </div>
+
+                                                    </div>
+                                                }
+                                            }
+
+                                        </div>
+
+                                    </div>
+
+                                </div>
+
+
+                                <div class="alert alert-secondary mt-4 mb-0">
+
+                                    <strong>How to interpret this:</strong>
+
+                                    These are global model coefficients.
+                                    They describe what the model learned
+                                    from the training data.
+
+                                    A coefficient does not mean that every
+                                    bill with that characteristic will have
+                                    the same outcome. The coefficient becomes
+                                    a bill-specific contribution only when
+                                    that feature is active for a particular bill.
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+                }
+
+            </div>
+
+
+            <div class="alert alert-secondary mt-4 mb-0">
+
+                <strong>Why group the features?</strong>
+
+                The model doesn't simply say "Bill Type is good or bad."
+                It learned a separate coefficient for each category.
+
+                For example, <code>HJRES</code> and <code>HRES</code>
+                have different learned coefficients. Expanding a feature
+                group lets us see those individual effects.
+
+            </div>
+
+        }
+
+    </div>
+
+</div>
+
+<!-- 04 - COEFFICIENT TO CONTRIBUTION                          -->
+<!-- ========================================================= -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <h2 class="h4 mb-4">
+            04 &nbsp; From Model Coefficient to Bill Contribution
+        </h2>
+
+        <p>
+            A coefficient describes what the model learned globally.
+            A contribution describes what that coefficient did when
+            evaluating a particular bill.
+        </p>
+
+
+        <div class="row text-center align-items-center g-3 mt-3">
+
+            <div class="col-md-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <h5>Feature</h5>
+
+                    <code>Type_HCONRES</code>
+
+                    <p class="text-muted mt-2 mb-0">
+                        Is this feature active for the bill?
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-1 fs-2">
+                →
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <h5>Coefficient</h5>
+
+                    <div class="fs-4">
+                        -0.4912
+                    </div>
+
+                    <p class="text-muted mt-2 mb-0">
+                        What the model learned.
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-1 fs-2">
+                ×
+            </div>
+
+
+            <div class="col-md-3">
+
+                <div class="border rounded p-4 h-100">
+
+                    <h5>Feature Value</h5>
+
+                    <div class="fs-4">
+                        1
+                    </div>
+
+                    <p class="text-muted mt-2 mb-0">
+                        HCONRES is active.
+                    </p>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="text-center fs-2 my-3">
+            ↓
+        </div>
+
+
+        <div class="border rounded p-4 text-center">
+
+            <div class="text-muted">
+                Bill Contribution
+            </div>
+
+            <div class="display-6">
+                -0.4912
+            </div>
+
+            <p class="text-muted mb-0">
+                The feature pushed this bill's underlying model score lower.
+            </p>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- 05 - SCORE TO PROBABILITY                                 -->
+<!-- ========================================================= -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <h2 class="h4 mb-4">
+            05 &nbsp; From Contributions to Probability
+        </h2>
+
+        <p>
+            Logistic regression combines the model intercept and all
+            active feature contributions into an underlying score.
+        </p>
+
+
+        <div class="border rounded p-4 bg-light">
+
+            <div class="text-center">
+
+                <div class="text-muted">
+                    Model Score
+                </div>
+
+                <div class="fs-3 mb-3">
+                    Intercept + Feature Contributions
+                </div>
+
+                <div class="fs-2">
+                    ↓
+                </div>
+
+                <div class="fs-3 my-3">
+                    Sigmoid Function
+                </div>
+
+                <div class="fs-2">
+                    ↓
+                </div>
+
+                <div class="text-muted">
+                    Final Prediction
+                </div>
+
+                <div class="display-5">
+                    0% — 100%
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <div class="mt-4">
+
+            <h5>The mathematics</h5>
+
+            <div class="bg-dark text-white rounded p-3">
+
+                <code class="text-white">
+                    score = intercept + Σ(feature × coefficient)
+                    <br /><br />
+                    probability = 1 / (1 + e⁻score)
+                </code>
+
+            </div>
+
+        </div>
+
+
+        <div class="alert alert-warning mt-4 mb-0">
+
+            <strong>Important:</strong>
+
+            Contribution values such as <code>-0.4912</code> are not
+            percentage-point changes. They are contributions to the
+            model's underlying log-odds score.
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<!-- ========================================================= -->
+<!-- 06 - CURRENT MODEL                                        -->
+<!-- ========================================================= -->
+
+<div class="card mb-5">
+
+    <div class="card-body">
+
+        <h2 class="h4 mb-4">
+            06 &nbsp; Current Model
+        </h2>
+
+        <div class="row">
+
+            <div class="col-md-3 mb-3">
+
+                <div class="border rounded p-3">
+
+                    <div class="text-muted">
+                        Algorithm
+                    </div>
+
+                    <div class="fs-5">
+                        Logistic Regression
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3 mb-3">
+
+                <div class="border rounded p-3">
+
+                    <div class="text-muted">
+                        Features
+                    </div>
+
+                    <div class="fs-5">
+                        @Model.FeatureCount
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3 mb-3">
+
+                <div class="border rounded p-3">
+
+                    <div class="text-muted">
+                        Latest Run
+                    </div>
+
+                    <div class="fs-5">
+                        @(Model.LatestRunId?.ToString() ?? "N/A")
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <div class="col-md-3 mb-3">
+
+                <div class="border rounded p-3">
+
+                    <div class="text-muted">
+                        Run Date
+                    </div>
+
+                    <div class="fs-5">
+                        @(Model.RunAt?.ToString("MMM d, yyyy") ?? "N/A")
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<div class="mb-4">
+
+    <a asp-page="/Bills/Index"
+       class="btn btn-primary">
+
+        View Current Bill Predictions
+
+    </a>
+
+</div>
+
+

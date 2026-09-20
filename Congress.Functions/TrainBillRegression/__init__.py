@@ -38,8 +38,13 @@ BEGIN
             DEFAULT SYSUTCDATETIME()
     );
 
-    CREATE UNIQUE INDEX UX_BillPassagePredictions_Bill
-        ON Silver.BillPassagePredictions(Type, BillNumber);
+    CREATE UNIQUE INDEX UX_BillPassagePredictions_BillRun
+        ON Silver.BillPassagePredictions
+        (
+            Type,
+            BillNumber,
+            PredictionRunId
+        );
 END;
 
 
@@ -59,13 +64,18 @@ BEGIN
         Direction       NVARCHAR(20) NOT NULL,
         ReasonRank      INT NOT NULL,
         PredictionRunId BIGINT NULL,
-        RunAt           DATETIME2 NOT NULL
+        RunAt            DATETIME2 NOT NULL
             CONSTRAINT DF_BillPassageReasons_RunAt
             DEFAULT SYSUTCDATETIME()
     );
 
-    CREATE INDEX IX_BillPassageReasons_Bill
-        ON Silver.BillPassageReasons(Type, BillNumber);
+    CREATE INDEX IX_BillPassageReasons_BillRun
+        ON Silver.BillPassageReasons
+        (
+            Type,
+            BillNumber,
+            PredictionRunId
+        );
 END;
 
 
@@ -93,8 +103,39 @@ BEGIN
         Accuracy              FLOAT NULL,
         AUC                   FLOAT NULL,
 
+        Intercept              FLOAT NULL,
+
         ModelType             NVARCHAR(200) NULL
     );
+END;
+
+
+-- ============================================================
+-- MODEL COEFFICIENT HISTORY
+-- ============================================================
+
+IF OBJECT_ID('Silver.BillPassageModelCoefficients', 'U') IS NULL
+BEGIN
+    CREATE TABLE Silver.BillPassageModelCoefficients
+    (
+        CoefficientId BIGINT IDENTITY(1,1) PRIMARY KEY,
+
+        PredictionRunId BIGINT NOT NULL,
+
+        FeatureName NVARCHAR(255) NOT NULL,
+
+        Coefficient FLOAT NOT NULL,
+
+        RunAt DATETIME2 NOT NULL
+            CONSTRAINT DF_BillPassageModelCoefficients_RunAt
+            DEFAULT SYSUTCDATETIME()
+    );
+
+    CREATE INDEX IX_BillPassageModelCoefficients_Run
+        ON Silver.BillPassageModelCoefficients
+        (
+            PredictionRunId
+        );
 END;
 """
 
@@ -404,8 +445,6 @@ def main(
 
         # ====================================================
         # CREATE FEATURES
-        #
-        # Type is now included as a categorical predictor.
         # ====================================================
 
         logging.info(
@@ -562,6 +601,38 @@ def main(
         )
 
         # ====================================================
+        # CAPTURE FINAL MODEL INTERCEPT + COEFFICIENTS
+        # ====================================================
+
+        intercept = float(
+            final_model.intercept_[0]
+        )
+
+        coefficients = (
+            final_model.coef_[0]
+        )
+
+        logging.info(
+            "Final model intercept: %.4f",
+            intercept
+        )
+
+        logging.info(
+            "Final model coefficients:"
+        )
+
+        for feature_name, coefficient in zip(
+            feature_names,
+            coefficients
+        ):
+
+            logging.info(
+                "  %s = %.4f",
+                feature_name,
+                coefficient
+            )
+
+        # ====================================================
         # GENERATE PREDICTIONS FOR ALL BILLS
         # ====================================================
 
@@ -613,10 +684,11 @@ def main(
                 TestCount,
                 Accuracy,
                 AUC,
+                Intercept,
                 ModelType
             )
             OUTPUT INSERTED.ModelRunId
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 eligible_bill_count,
@@ -628,6 +700,7 @@ def main(
                 float(auc)
                 if auc is not None
                 else None,
+                intercept,
                 (
                     "LogisticRegression - "
                     "Type + OriginChamber + PolicyArea"
@@ -670,16 +743,60 @@ def main(
         )
 
         # ====================================================
+        # SAVE MODEL COEFFICIENTS
+        # ====================================================
+
+        coefficient_rows = []
+
+        for feature_name, coefficient in zip(
+            feature_names,
+            coefficients
+        ):
+
+            coefficient_rows.append(
+                (
+                    prediction_run_id,
+                    feature_name,
+                    round(
+                        float(coefficient),
+                        4
+                    )
+                )
+            )
+
+        cursor = connection.cursor()
+
+        cursor.executemany(
+            """
+            INSERT INTO
+                Silver.BillPassageModelCoefficients
+            (
+                PredictionRunId,
+                FeatureName,
+                Coefficient
+            )
+            VALUES (?, ?, ?)
+            """,
+            coefficient_rows
+        )
+
+        connection.commit()
+
+        cursor.close()
+
+        logging.info(
+            "Saved %s model coefficients for run %s.",
+            len(coefficient_rows),
+            prediction_run_id
+        )
+
+        # ====================================================
         # BUILD PREDICTION + REASON DATA
         # ====================================================
 
         prediction_rows = []
 
         reason_rows = []
-
-        coefficients = (
-            final_model.coef_[0]
-        )
 
         logging.info(
             "Building predictions and explanations..."
@@ -1017,6 +1134,19 @@ def main(
             cursor.fetchone()[0]
         )
 
+        cursor.execute(
+            """
+            SELECT COUNT(*)
+            FROM Silver.BillPassageModelCoefficients
+            WHERE PredictionRunId = ?
+            """,
+            prediction_run_id
+        )
+
+        saved_coefficient_count = int(
+            cursor.fetchone()[0]
+        )
+
         cursor.close()
 
         logging.info(
@@ -1036,6 +1166,16 @@ def main(
         logging.info(
             "  Saved reasons: %s",
             saved_reason_count
+        )
+
+        logging.info(
+            "  Saved model coefficients: %s",
+            saved_coefficient_count
+        )
+
+        logging.info(
+            "  Model intercept: %.4f",
+            intercept
         )
 
         logging.info(
