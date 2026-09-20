@@ -44,6 +44,18 @@
 
     console.log("Leaflet map initialized");
 
+    map.on("click", function (e) {
+        console.log("Map clicked:", e.latlng);
+    });
+
+    map.on("popupopen", function () { console.log("popupopen"); });
+    map.on("popupclose", function () { console.log("popupclose"); });
+
+    function hasCoords(c) {
+        return Array.isArray(c) &&
+            (typeof c[0] === "number" || c.some(hasCoords));
+    }
+
     fetch("/data/congressional-districts-120.simplified.geojson")
         .then(function (response) {
 
@@ -64,8 +76,21 @@
         .then(function (data) {
 
             console.log(
-                "Congressional district data:",
-                data
+                "First feature properties:",
+                data.features[0].properties
+            );
+
+            var before = data.features.length;
+
+            data.features = data.features.filter(function (f) {
+                return f.geometry &&
+                    hasCoords(f.geometry.coordinates) &&
+                    (f.properties || {}).CD120FP !== "ZZ";
+            });
+
+            console.log(
+                "Dropped empty/undefined features:",
+                before - data.features.length
             );
 
             L.geoJSON(data, {
@@ -85,22 +110,44 @@
                         feature.properties || {};
 
                     var district =
+                        properties.CD120FP ||
+                        properties.CD119FP ||
+                        properties.CDFP ||
                         properties.CD120 ||
                         properties.CD119 ||
                         properties.CD ||
+                        properties.GEOID ||
                         "Unknown";
 
                     var name =
+                        properties.NAMELSAD ||
                         properties.NAME ||
                         "Congressional District";
 
-                    layer.bindPopup(
-                        "<strong>" +
-                        name +
-                        "</strong><br>" +
-                        "District: " +
-                        district
-                    );
+                    layer.on("click", function (e) {
+                        console.log("Layer clicked:", name, district);
+
+                        var popup = L.popup({ closeOnClick: false })
+                            .setLatLng(e.latlng)
+                            .setContent(
+                                "<strong>" + name + "</strong><br>" +
+                                "District: "
+                            )
+                            .openOn(map);
+                        console.log("before popup")
+                        console.log(popup)
+                        console.log("after popup")
+                        setTimeout(function () {
+                            var el = document.querySelector(".leaflet-popup");
+                            console.log("On map:", map.hasLayer(popup));
+                            console.log("Element:", el);
+                            if (el) {
+                                var cs = getComputedStyle(el);
+                                console.log("Style:", cs.display, cs.visibility, cs.opacity);
+                                console.log("Rect:", el.getBoundingClientRect());
+                            }
+                        }, 100);
+                    });
 
                     layer.on(
                         "mouseover",
@@ -147,4 +194,4 @@
                 error.message +
                 '</div>';
         });
-</script> 
+</script>
