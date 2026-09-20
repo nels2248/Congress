@@ -7,40 +7,54 @@ namespace Congress.Web.Pages.Bills;
 
 public class IndexModel : PageModel
 {
-    private readonly CongressDbContext _db;
+private readonly CongressDbContext _db;
 
-    public IndexModel(CongressDbContext db)
+public IndexModel(CongressDbContext db)
+{
+    _db = db;
+}
+
+public List<BillPrediction> Bills { get; set; } = new();
+
+public int TotalBills { get; set; }
+public int HighCount { get; set; }
+public int ModerateCount { get; set; }
+public int LowCount { get; set; }
+public int VeryLowCount { get; set; }
+
+public async Task OnGetAsync()
+{
+    // Get the latest prediction run
+    var latestRunId = await _db.BillPredictions
+        .MaxAsync(b => (long?)b.PredictionRunId);
+
+    if (latestRunId == null)
     {
-        _db = db;
+        return;
     }
 
-    public List<BillPrediction> Bills { get; set; } = new();
+    // Only use predictions from the latest model run
+    var latestPredictions = _db.BillPredictions
+        .Where(b => b.PredictionRunId == latestRunId);
 
-    public int TotalBills { get; set; }
-    public int HighCount { get; set; }
-    public int ModerateCount { get; set; }
-    public int LowCount { get; set; }
-    public int VeryLowCount { get; set; }
+    TotalBills = await latestPredictions.CountAsync();
 
-    public async Task OnGetAsync()
-    {
-        TotalBills = await _db.BillPredictions.CountAsync();
+    HighCount = await latestPredictions
+        .CountAsync(b => b.PredictedOutcome == "High");
 
-        HighCount = await _db.BillPredictions
-            .CountAsync(b => b.PredictedOutcome == "High");
+    ModerateCount = await latestPredictions
+        .CountAsync(b => b.PredictedOutcome == "Moderate");
 
-        ModerateCount = await _db.BillPredictions
-            .CountAsync(b => b.PredictedOutcome == "Moderate");
+    LowCount = await latestPredictions
+        .CountAsync(b => b.PredictedOutcome == "Low");
 
-        LowCount = await _db.BillPredictions
-            .CountAsync(b => b.PredictedOutcome == "Low");
+    VeryLowCount = await latestPredictions
+        .CountAsync(b => b.PredictedOutcome == "Very Low");
 
-        VeryLowCount = await _db.BillPredictions
-            .CountAsync(b => b.PredictedOutcome == "Very Low");
-
-        Bills = await _db.BillPredictions
-            .OrderByDescending(b => b.PredictedProbability)
-            .Take(10)
-            .ToListAsync();
-    }
+    Bills = await latestPredictions
+        .OrderByDescending(b => b.PredictedProbability)
+        .Take(10)
+        .ToListAsync();
 } 
+
+}

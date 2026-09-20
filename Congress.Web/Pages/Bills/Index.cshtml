@@ -2,7 +2,7 @@
 @model Congress.Web.Pages.Bills.IndexModel
 
 @{
-    ViewData["Title"] = "Bill Predictions";
+ViewData["Title"] = "Bill Predictions";
 }
 
 <h1>Bill Passage Predictions</h1>
@@ -19,7 +19,7 @@
                 <div class="fs-2">@Model.TotalBills.ToString("N0")</div>
             </div>
         </div>
-    </div>
+    </div> 
 
     <div class="col-md-2">
         <div class="card">
@@ -55,87 +55,78 @@
                 <div class="fs-2">@Model.VeryLowCount.ToString("N0")</div>
             </div>
         </div>
-    </div>
+    </div> 
+
 </div>
 
 <h2>Top 10 Most Likely to Pass</h2>
 
 @if (Model.Bills.Count == 0)
-{
-    <div class="alert alert-info">
-        No bill predictions are currently available.
-    </div>
+{ <div class="alert alert-info">
+No bill predictions are currently available. </div>
 }
 else
-{
-    <div class="table-responsive">
-        <table class="table table-striped table-hover align-middle">
-            <thead>
+{ <div class="table-responsive"> <table class="table table-striped table-hover align-middle"> <thead> <tr> <th>#</th> <th>Bill</th> <th>Title</th> <th>Predicted Likelihood</th> <th>Model Category</th> </tr> </thead>
+
+        <tbody>
+            @{
+                var rank = 1;
+            }
+
+            @foreach (var bill in Model.Bills)
+            {
                 <tr>
-                    <th>#</th>
-                    <th>Bill</th>
-                    <th>Title</th>
-                    <th>Predicted Likelihood</th>
-                    <th>Model Category</th>
+                    <td>@rank</td>
+
+                    <td>
+                        <a asp-page="/Bills/Details"
+                           asp-route-type="@bill.Type"
+                           asp-route-billNumber="@bill.BillNumber">
+                            @bill.Type @bill.BillNumber
+                        </a>
+                    </td>
+
+                    <td>
+                        <a asp-page="/Bills/Details"
+                           asp-route-type="@bill.Type"
+                           asp-route-billNumber="@bill.BillNumber"
+                           class="text-decoration-none">
+                            @bill.Title
+                        </a>
+                    </td>
+
+                    <td>
+                        <strong>
+                            @(bill.PredictedProbability?.ToString("P1") ?? "N/A")
+                        </strong>
+                    </td>
+
+                    <td>
+                        @if (bill.PredictedOutcome == "High")
+                        {
+                            <span class="badge bg-success">High</span>
+                        }
+                        else if (bill.PredictedOutcome == "Moderate")
+                        {
+                            <span class="badge bg-primary">Moderate</span>
+                        }
+                        else if (bill.PredictedOutcome == "Low")
+                        {
+                            <span class="badge bg-warning text-dark">Low</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-secondary">
+                                @bill.PredictedOutcome
+                            </span>
+                        }
+                    </td>
                 </tr>
-            </thead>
 
-            <tbody>
-                @{
-                    var rank = 1;
-                }
+                rank++;
+            }
+        </tbody>
+    </table>
+</div> 
 
-                @foreach (var bill in Model.Bills)
-                {
-                    <tr>
-                        <td>@rank</td>
-
-                        <td>
-                            <a asp-page="/Bills/Details"
-                               asp-route-id="@bill.FileId">
-                                @bill.FileId
-                            </a>
-                        </td>
-
-                        <td>
-                            <a asp-page="/Bills/Details"
-                               asp-route-id="@bill.FileId"
-                               class="text-decoration-none">
-                                @bill.Title
-                            </a>
-                        </td>
-
-                        <td>
-                            <strong>
-                                @(bill.PredictedProbability?.ToString("P1") ?? "N/A")
-                            </strong>
-                        </td>
-
-                        <td>
-                            @if (bill.PredictedOutcome == "High")
-                            {
-                                <span class="badge bg-success">High</span>
-                            }
-                            else if (bill.PredictedOutcome == "Moderate")
-                            {
-                                <span class="badge bg-primary">Moderate</span>
-                            }
-                            else if (bill.PredictedOutcome == "Low")
-                            {
-                                <span class="badge bg-warning text-dark">Low</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-secondary">
-                                    @bill.PredictedOutcome
-                                </span>
-                            }
-                        </td>
-                    </tr>
-
-                    rank++;
-                }
-            </tbody>
-        </table>
-    </div>
-} 
+}
