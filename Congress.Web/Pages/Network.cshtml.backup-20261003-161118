@@ -1,0 +1,2160 @@
+@page
+@model Congress.Web.Pages.NetworkModel
+
+@{
+    ViewData["Title"] = "Congressional Network";
+}
+
+<style>
+
+    html,
+    body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    body {
+        overflow: hidden;
+    }
+
+    .network-page {
+        height: 100vh;
+        height: 100dvh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        box-sizing: border-box;
+    }
+
+    .network-toolbar {
+        flex: 0 0 auto;
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        border-bottom: 1px solid #ddd;
+        background: white;
+        z-index: 10;
+    }
+
+    .network-toolbar label {
+        font-weight: 600;
+        margin-right: 3px;
+    }
+
+    .network-toolbar select,
+    .network-toolbar button {
+        font-size: 14px;
+    }
+
+    .network-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        display: flex;
+        overflow: hidden;
+    }
+    .network-content {
+        flex: 1 1 auto;
+        min-height: 0;
+        min-width: 0;
+        display: flex;
+        overflow: hidden;
+    }
+
+    #network {
+        flex: 1 1 75%;
+        min-height: 0;
+        min-width: 0;
+        position: relative;
+        overflow: hidden;
+        background: #fafafa;
+        cursor: grab;
+    }
+
+    #network:active {
+        cursor: grabbing;
+    }
+
+    #network svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .connections-panel {
+        flex: 0 0 25%;
+        min-width: 280px;
+        max-width: 420px;
+        height: 100%;
+        overflow-y: auto;
+        box-sizing: border-box;
+        background: white;
+        border-left: 1px solid #ccc;
+        padding: 14px;
+    }
+
+    .connections-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 3px;
+    }
+
+    .connections-subtitle {
+        font-size: 12px;
+        color: #777;
+        margin-bottom: 12px;
+    }
+
+    .connection-row {
+        display: grid;
+        grid-template-columns: 28px 1fr auto;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 4px;
+        border-bottom: 1px solid #eee;
+        font-size: 12px;
+    }
+
+    .connection-row:hover {
+        background: #f5f5f5;
+    }
+
+    .connection-rank {
+        color: #888;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .connection-people {
+        min-width: 0;
+    }
+
+    .connection-person {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 600;
+    }
+
+    .connection-meta {
+        color: #777;
+        font-size: 11px;
+        margin-top: 2px;
+    }
+
+    .connection-count {
+        font-size: 16px;
+        font-weight: 700;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .connection-count-label {
+        display: block;
+        font-size: 9px;
+        font-weight: 400;
+        color: #777;
+    }
+
+    .connection-empty {
+        color: #777;
+        font-size: 13px;
+        padding: 10px 0;
+    }
+
+    /* ========================================================
+       TOP CONNECTIONS PANEL
+       ======================================================== */
+
+    .connections-panel {
+        flex: 0 0 25%;
+        min-width: 280px;
+        max-width: 420px;
+        height: 100%;
+        overflow-y: auto;
+        box-sizing: border-box;
+        background: white;
+        border-left: 1px solid #ccc;
+        padding: 14px;
+    }
+
+    .connections-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 3px;
+    }
+
+    .connections-subtitle {
+        font-size: 12px;
+        color: #777;
+        margin-bottom: 12px;
+    }
+
+    .connection-row {
+        display: grid;
+        grid-template-columns: 28px 1fr auto;
+        gap: 8px;
+        align-items: center;
+        padding: 8px 4px;
+        border-bottom: 1px solid #eee;
+        font-size: 12px;
+    }
+
+    .connection-row:hover {
+        background: #f5f5f5;
+    }
+
+    .connection-rank {
+        color: #888;
+        font-weight: 600;
+        text-align: right;
+    }
+
+    .connection-people {
+        min-width: 0;
+    }
+
+    .connection-person {
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-weight: 600;
+    }
+
+    .connection-meta {
+        color: #777;
+        font-size: 11px;
+        margin-top: 2px;
+    }
+
+    .connection-count {
+        font-size: 16px;
+        font-weight: 700;
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .connection-count-label {
+        display: block;
+        font-size: 9px;
+        font-weight: 400;
+        color: #777;
+    }
+
+    .connection-cross-party {
+        color: #777;
+    }
+
+    .connection-empty {
+        color: #777;
+        font-size: 13px;
+        padding: 10px 0;
+    }
+
+    @media (max-width: 900px) {
+
+        .connections-panel {
+            flex-basis: 35%;
+            min-width: 240px;
+        }
+
+        #network {
+            flex-basis: 65%;
+        }
+    }
+
+    .people-dropdown {
+        position: relative;
+        width: 390px;
+    }
+
+    .people-button {
+        width: 100%;
+        text-align: left;
+        padding: 5px 9px;
+        background: white;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+
+    .people-menu {
+        display: none;
+        position: absolute;
+        top: calc(100% + 3px);
+        left: 0;
+        width: 390px;
+        max-height: 500px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+        box-shadow: 0 4px 12px rgba(0,0,0,.18);
+        z-index: 100;
+        padding: 8px;
+        box-sizing: border-box;
+    }
+
+    .people-menu.open {
+        display: block;
+    }
+
+    .people-actions {
+        display: flex;
+        gap: 6px;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .people-actions button {
+        padding: 4px 8px;
+        font-size: 12px;
+    }
+
+    .person-option {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 3px 2px;
+        font-size: 13px;
+    }
+
+    .person-option:hover {
+        background: #f1f1f1;
+    }
+
+    .person-option input {
+        margin: 0;
+    }
+
+    .legend {
+        position: absolute;
+        left: 15px;
+        bottom: 15px;
+        background: rgba(255,255,255,.92);
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        padding: 8px 10px;
+        font-size: 12px;
+        line-height: 1.6;
+        box-shadow: 0 2px 6px rgba(0,0,0,.12);
+        pointer-events: none;
+    }
+
+    .legend-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .legend-line {
+        width: 25px;
+        height: 0;
+        border-top: 2px solid #555;
+    }
+
+    .legend-line.dashed {
+        border-top-style: dashed;
+    }
+
+    .legend-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    .legend-dot.dem {
+        background: #2166ac;
+    }
+
+    .legend-dot.rep {
+        background: #b2182b;
+    }
+
+    .legend-dot.other {
+        background: #777;
+    }
+
+    .network-status {
+        font-size: 13px;
+        color: #666;
+        margin-left: 5px;
+    }
+
+
+    /* ========================================================
+       CONNECTION TOOLTIP
+       ======================================================== */
+
+    .network-tooltip {
+        position: fixed;
+        display: none;
+        pointer-events: none;
+        z-index: 9999;
+
+        background: rgba(30, 30, 30, 0.96);
+        color: white;
+
+        padding: 10px 12px;
+
+        border-radius: 6px;
+
+        font-size: 13px;
+        line-height: 1.4;
+
+        box-shadow:
+            0 4px 14px rgba(0, 0, 0, .3);
+
+        min-width: 180px;
+        max-width: 280px;
+    }
+
+    .network-tooltip-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .network-tooltip-party {
+        color: #ccc;
+        font-size: 12px;
+    }
+
+    .network-tooltip-divider {
+        border-top: 1px solid rgba(255,255,255,.25);
+        margin: 7px 0;
+    }
+
+    .network-tooltip-shared {
+        font-weight: 600;
+        margin-top: 5px;
+    }
+
+    .network-tooltip-type {
+        color: #ccc;
+        font-size: 12px;
+        margin-top: 2px;
+    }
+
+</style>
+
+
+<div class="network-page">
+
+    <div class="network-toolbar">
+
+        <label>People</label>
+
+        <div class="people-dropdown">
+
+            <button type="button"
+                    id="peopleButton"
+                    class="people-button">
+                Loading people...
+            </button>
+
+            <div id="peopleMenu"
+                 class="people-menu">
+
+                <div class="people-actions">
+
+                    <button type="button"
+                            id="selectAllButton">
+                        Select All
+                    </button>
+
+                    <button type="button"
+                            id="clearAllButton">
+                        Clear All
+                    </button>
+
+                </div>
+
+                <div id="peopleList"></div>
+
+            </div>
+
+        </div>
+
+
+        <label for="networkSize">
+            Network size
+        </label>
+
+        <select id="networkSize">
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option> 
+            <option value="10">10</option>
+            <option value="15">15</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="50" selected>50</option>
+            <option value="75">75</option>
+            <option value="100">100</option>
+            <option value="150">150</option>
+            <option value="250">250</option>
+            <option value="500">500</option>
+            <option value="750">750</option>
+            <option value="1000">1000</option>
+
+        </select>
+
+
+        <label for="minSharedBills">
+            Min shared bills
+        </label>
+
+        <select id="minSharedBills">
+
+            <option value="1">1</option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+            <option value="40">40</option>
+            <option value="50" selected>50</option>
+            <option value="75">75</option>
+            <option value="100">100</option>
+
+        </select>
+
+
+        <button type="button"
+                id="loadNetworkButton">
+            Load Network
+        </button>
+
+        <span id="networkStatus"
+              class="network-status"></span>
+
+    </div>
+
+
+    <div class="network-content">
+
+    <div id="network">
+
+        <div class="legend">
+
+            <div class="legend-row">
+                <span class="legend-dot dem"></span>
+                Democrat
+            </div>
+
+            <div class="legend-row">
+                <span class="legend-dot rep"></span>
+                Republican
+            </div>
+
+            <div class="legend-row">
+                <span class="legend-dot other"></span>
+                Other
+            </div>
+
+            <div class="legend-row">
+                <span class="legend-line"></span>
+                Same party
+            </div>
+
+            <div class="legend-row">
+                <span class="legend-line dashed"></span>
+                Cross party
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="connections-panel">
+
+        <div class="connections-title">
+            Top 20 Connections
+        </div>
+
+        <div class="connections-subtitle">
+            Strongest relationships in displayed network
+        </div>
+
+        <div id="connectionsList">
+            <div class="connection-empty">
+                Load a network to see connections.
+            </div>
+        </div>
+
+    </div>
+
+</div>
+
+<script src="https://d3js.org<script src="https://d3js.org/d3.v7.min.js"></script>
+
+
+<script>
+
+let allMembers = [];
+let selectedIds = new Set();
+
+let svg = null;
+let simulation = null;
+
+
+// ============================================================
+// PEOPLE SELECTOR
+// ============================================================
+
+async function loadMembers() {
+
+    try {
+
+        const response =
+            await fetch("?handler=Members");
+
+        if (!response.ok)
+            throw new Error(
+                "HTTP " + response.status
+            );
+
+        allMembers =
+            await response.json();
+
+        selectedIds =
+            new Set(
+                allMembers.map(d => d.id)
+            );
+
+        renderPeopleList();
+        updatePeopleButton();
+
+    }
+    catch (error) {
+
+        console.error(
+            "Members loading error:",
+            error
+        );
+
+        document
+            .getElementById("peopleButton")
+            .textContent =
+                "Error loading people";
+
+    }
+}
+
+
+function renderPeopleList() {
+
+    const list =
+        document.getElementById("peopleList");
+
+    list.innerHTML = "";
+
+    for (const person of allMembers) {
+
+        const label =
+            document.createElement("label");
+
+        label.className =
+            "person-option";
+
+        const checkbox =
+            document.createElement("input");
+
+        checkbox.type =
+            "checkbox";
+
+        checkbox.value =
+            person.id;
+
+        checkbox.checked =
+            selectedIds.has(person.id);
+
+        checkbox.addEventListener(
+            "change",
+            function () {
+
+                if (this.checked)
+                    selectedIds.add(this.value);
+                else
+                    selectedIds.delete(this.value);
+
+                updatePeopleButton();
+
+            }
+        );
+
+        const text =
+            document.createElement("span");
+
+        text.textContent =
+            `${person.name} (${person.party || "?"}-${person.state || "?"})`;
+
+        label.appendChild(checkbox);
+        label.appendChild(text);
+
+        list.appendChild(label);
+    }
+}
+
+
+function updatePeopleButton() {
+
+    const button =
+        document.getElementById("peopleButton");
+
+    if (selectedIds.size === allMembers.length) {
+
+        button.textContent =
+            `All people (${allMembers.length})`;
+
+    }
+    else if (selectedIds.size === 0) {
+
+        button.textContent =
+            "No people selected";
+
+    }
+    else {
+
+        button.textContent =
+            `${selectedIds.size} people selected`;
+
+    }
+}
+
+
+document
+    .getElementById("peopleButton")
+    .addEventListener(
+        "click",
+        function () {
+
+            document
+                .getElementById("peopleMenu")
+                .classList.toggle("open");
+
+        }
+    );
+
+
+document
+    .getElementById("selectAllButton")
+    .addEventListener(
+        "click",
+        function () {
+
+            selectedIds =
+                new Set(
+                    allMembers.map(d => d.id)
+                );
+
+            renderPeopleList();
+            updatePeopleButton();
+
+        }
+    );
+
+
+document
+    .getElementById("clearAllButton")
+    .addEventListener(
+        "click",
+        function () {
+
+            selectedIds.clear();
+
+            renderPeopleList();
+            updatePeopleButton();
+
+        }
+    );
+
+
+document.addEventListener(
+    "click",
+    function (event) {
+
+        const dropdown =
+            document.querySelector(
+                ".people-dropdown"
+            );
+
+        if (!dropdown.contains(event.target)) {
+
+            document
+                .getElementById("peopleMenu")
+                .classList.remove("open");
+
+        }
+
+    }
+);
+
+
+// ============================================================
+// LOAD NETWORK
+// ============================================================
+
+document
+    .getElementById("loadNetworkButton")
+    .addEventListener(
+        "click",
+        loadNetwork
+    );
+
+
+async function loadNetwork() {
+
+    const status =
+        document.getElementById(
+            "networkStatus"
+        );
+
+    if (selectedIds.size === 0) {
+
+        status.textContent =
+            "Select at least one person.";
+
+        return;
+
+    }
+
+    const networkSize =
+        document.getElementById(
+            "networkSize"
+        ).value;
+
+    const minSharedBills =
+        document.getElementById(
+            "minSharedBills"
+        ).value;
+
+    status.textContent =
+        "Loading...";
+
+    try {
+
+        const params =
+            new URLSearchParams();
+
+        params.set(
+            "selectedIds",
+            Array.from(selectedIds).join(",")
+        );
+
+        params.set(
+            "networkSize",
+            networkSize
+        );
+
+        params.set(
+            "minSharedBills",
+            minSharedBills
+        );
+
+        const response =
+            await fetch(
+                `?handler=Data&${params.toString()}`
+            );
+
+        if (!response.ok) {
+
+            const message =
+                await response.text();
+
+            throw new Error(message);
+
+        }
+
+        const data =
+            await response.json();
+
+        console.log(
+            "Network data:",
+            data
+        );
+
+        drawNetwork(data);
+
+        updateConnectionsPanel(data);
+
+        status.textContent =
+            `${data.nodes.length} people, ${data.edges.length} connections`;
+
+    }
+    catch (error) {
+
+        console.error(
+            "Network loading error:",
+            error
+        );
+
+        status.textContent =
+            "Error loading network: " +
+            error.message;
+
+    }
+}
+
+
+// ============================================================
+// DRAW NETWORK
+// ============================================================
+
+
+    // ========================================================
+    // TOP 20 CONNECTIONS
+    // ========================================================
+
+    function updateConnectionsPanel(data) {
+
+        const list =
+            document.getElementById("connectionsList");
+
+        if (!list)
+            return;
+
+        list.innerHTML = "";
+
+        if (!data.edges || data.edges.length === 0) {
+
+            list.innerHTML =
+                `<div class="connection-empty">
+                    No qualifying connections.
+                 </div>`;
+
+            return;
+        }
+
+        const nodeMap = new Map(
+            data.nodes.map(n => [n.id, n])
+        );
+
+        const topConnections =
+            [...data.edges]
+                .sort(
+                    (a, b) =>
+                        b.sharedBillCount -
+                        a.sharedBillCount
+                )
+                .slice(0, 20);
+
+        topConnections.forEach(
+            function(edge, index) {
+
+                const source =
+                    typeof edge.source === "object"
+                        ? edge.source
+                        : nodeMap.get(edge.source);
+
+                const target =
+                    typeof edge.target === "object"
+                        ? edge.target
+                        : nodeMap.get(edge.target);
+
+                if (!source || !target)
+                    return;
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "connection-row";
+
+                const rank =
+                    document.createElement("div");
+
+                rank.className =
+                    "connection-rank";
+
+                rank.textContent =
+                    index + 1;
+
+                const people =
+                    document.createElement("div");
+
+                people.className =
+                    "connection-people";
+
+                const sourceName =
+                    document.createElement("div");
+
+                sourceName.className =
+                    "connection-person";
+
+                sourceName.textContent =
+                    source.name;
+
+                const targetName =
+                    document.createElement("div");
+
+                targetName.className =
+                    "connection-person";
+
+                targetName.textContent =
+                    target.name;
+
+                const meta =
+                    document.createElement("div");
+
+                meta.className =
+                    "connection-meta";
+
+                meta.textContent =
+                    `${source.party || "?"}-${source.state || "?"} ↔ ` +
+                    `${target.party || "?"}-${target.state || "?"}` +
+                    (
+                        edge.crossParty
+                            ? " • Cross-party"
+                            : " • Same party"
+                    );
+
+                people.appendChild(sourceName);
+                people.appendChild(targetName);
+                people.appendChild(meta);
+
+                const count =
+                    document.createElement("div");
+
+                count.className =
+                    "connection-count";
+
+                count.textContent =
+                    edge.sharedBillCount;
+
+                const label =
+                    document.createElement("span");
+
+                label.className =
+                    "connection-count-label";
+
+                label.textContent =
+                    "bills";
+
+                count.appendChild(label);
+
+                row.appendChild(rank);
+                row.appendChild(people);
+                row.appendChild(count);
+
+                list.appendChild(row);
+            }
+        );
+    }
+
+    function drawNetwork(data) {
+
+    const container =
+        document.getElementById("network");
+
+    const width =
+        container.clientWidth;
+
+    const height =
+        container.clientHeight;
+
+    if (width <= 0 || height <= 0) {
+
+        console.error(
+            "Network container has invalid size:",
+            width,
+            height
+        );
+
+        return;
+
+    }
+
+    if (simulation)
+        simulation.stop();
+
+    d3.select("#network svg")
+        .remove();
+
+
+    d3.select("#networkTooltip")
+        .style(
+            "display",
+            "none"
+        );
+
+
+    svg =
+        d3.select("#network")
+            .append("svg")
+            .attr(
+                "width",
+                width
+            )
+            .attr(
+                "height",
+                height
+            )
+            .attr(
+                "viewBox",
+                `0 0 ${width} ${height}`
+            )
+            .style(
+                "cursor",
+                "grab"
+            );
+
+
+    // ========================================================
+    // GRAPH GROUP
+    // ========================================================
+
+    const graphGroup =
+        svg.append("g")
+            .attr(
+                "class",
+                "graph-group"
+            );
+
+
+    // ========================================================
+    // ZOOM / PAN
+    // ========================================================
+
+    const zoom =
+        d3.zoom()
+            .scaleExtent([
+                0.35,
+                3
+            ])
+            .on(
+                "start",
+                function () {
+
+                    svg.style(
+                        "cursor",
+                        "grabbing"
+                    );
+
+                }
+            )
+            .on(
+                "zoom",
+                function (event) {
+
+                    graphGroup.attr(
+                        "transform",
+                        event.transform
+                    );
+
+                }
+            )
+            .on(
+                "end",
+                function () {
+
+                    svg.style(
+                        "cursor",
+                        "grab"
+                    );
+
+                }
+            );
+
+
+    svg.call(zoom);
+
+
+    svg.on(
+        "dblclick.zoom",
+        function () {
+
+            svg.transition()
+                .duration(400)
+                .call(
+                    zoom.transform,
+                    d3.zoomIdentity
+                );
+
+        }
+    );
+
+
+    // ========================================================
+    // ALL NODES SAME SIZE
+    // ========================================================
+
+    const nodeRadius = 12;
+
+
+    // ========================================================
+    // EDGE WIDTH
+    // ========================================================
+
+    /*
+     * ========================================================
+     * EDGE IMPORTANCE
+     *
+     * Top 20 relationships get the full visual treatment.
+     *
+     * Everything below the Top 20 becomes intentionally thin
+     * gray "background noise".
+     *
+     * This lets the strongest relationships stand out without
+     * deleting the weaker relationships from the graph.
+     * ========================================================
+     */
+
+    const rankedEdges =
+        [...data.edges]
+            .sort(
+                (a, b) =>
+                    b.sharedBillCount -
+                    a.sharedBillCount
+            );
+
+    const importantEdges =
+        rankedEdges.slice(0, 20);
+
+    const importantEdgeSet =
+        new Set(
+            importantEdges
+                .map(edge => edge)
+        );
+
+    const importantMax =
+        d3.max(
+            importantEdges,
+            d => d.sharedBillCount
+        ) || 1;
+
+    const importantMin =
+        d3.min(
+            importantEdges,
+            d => d.sharedBillCount
+        ) || 1;
+
+    /*
+     * Use percentage of the strongest connection.
+     *
+     * This makes a 90-bill relationship noticeably stronger
+     * than a 50-bill relationship.
+     */
+
+    const importantWidthScale =
+        d3.scaleLinear()
+            .domain([
+                importantMin,
+                importantMax
+            ])
+            .range([
+                3,
+                10
+            ])
+            .clamp(true);
+
+
+    function isImportantEdge(edge) {
+
+        return importantEdges.includes(
+            edge
+        );
+
+    }
+
+
+    function getEdgeWidth(edge) {
+
+        if (!isImportantEdge(edge))
+            return 1;
+
+        return importantWidthScale(
+            edge.sharedBillCount
+        );
+
+    }
+
+
+    // ========================================================
+
+    // ========================================================
+    // EDGE VISUAL PRIORITY
+    //
+    // Top 20 = strong visual lines
+    // Everything else = thin gray background/noise
+    // ========================================================
+
+    const rankedEdges =
+        [...data.edges]
+            .sort(
+                (a, b) =>
+                    b.sharedBillCount -
+                    a.sharedBillCount
+            );
+
+    const importantEdges =
+        rankedEdges.slice(0, 20);
+
+    const importantEdgeSet =
+        new Set(importantEdges);
+
+    const importantMax =
+        d3.max(
+            importantEdges,
+            d => d.sharedBillCount
+        ) || 1;
+
+    const importantMin =
+        d3.min(
+            importantEdges,
+            d => d.sharedBillCount
+        ) || 1;
+
+    const importantWidthScale =
+        d3.scaleLinear()
+            .domain([
+                importantMin,
+                importantMax
+            ])
+            .range([
+                3,
+                10
+            ])
+            .clamp(true);
+
+    function isImportantEdge(edge) {
+
+        return importantEdgeSet.has(edge);
+
+    }
+
+    function getEdgeWidth(edge) {
+
+        if (!isImportantEdge(edge))
+            return 1;
+
+        return importantWidthScale(
+            edge.sharedBillCount
+        );
+    }
+
+    // LINKS
+    // ========================================================
+
+    const links =
+        graphGroup
+            .append("g")
+            .attr(
+                "class",
+                "links"
+            )
+            .selectAll("line")
+            .data(data.edges)
+            .enter()
+            .append("line")
+            .attr(
+                "stroke",
+                "#777"
+            )
+            .attr(
+                "stroke-width",
+                d => getEdgeWidth(d)
+            )
+            .attr(
+                "stroke",
+                d =>
+                    isImportantEdge(d)
+                        ? "#555"
+                        : "#c7c7c7"
+            )
+            .attr(
+                "stroke-dasharray",
+                d =>
+                    d.crossParty
+                        ? (
+                            isImportantEdge(d)
+                                ? "6,5"
+                                : "3,4"
+                        )
+                        : null
+            )
+            .attr(
+                "stroke-opacity",
+                d =>
+                    isImportantEdge(d)
+                        ? .65
+                        : .30
+            )
+            .style(
+                "cursor",
+                "pointer"
+            );
+
+
+    // ========================================================
+    // TOP 20 CONNECTIONS PANEL
+    // ========================================================
+
+    function updateConnectionsPanel(data) {
+
+        const list =
+            document.getElementById(
+                "connectionsList"
+            );
+
+        if (!list)
+            return;
+
+        list.innerHTML = "";
+
+        if (!data.edges || data.edges.length === 0) {
+
+            list.innerHTML =
+                `<div class="connection-empty">
+                    No qualifying connections.
+                 </div>`;
+
+            return;
+        }
+
+        /*
+         * Sort strongest relationships first.
+         *
+         * SharedBillCount is the actual relationship
+         * strength.
+         */
+
+        const topConnections =
+            [...data.edges]
+                .sort(
+                    (a, b) =>
+                        b.sharedBillCount -
+                        a.sharedBillCount
+                )
+                .slice(0, 20);
+
+
+        function getNode(id) {
+
+            return data.nodes.find(
+                n => n.id === id
+            );
+
+        }
+
+
+        topConnections.forEach(
+            function(edge, index) {
+
+                const source =
+                    typeof edge.source === "object"
+                        ? edge.source
+                        : getNode(edge.source);
+
+                const target =
+                    typeof edge.target === "object"
+                        ? edge.target
+                        : getNode(edge.target);
+
+                if (!source || !target)
+                    return;
+
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "connection-row";
+
+
+                const rank =
+                    document.createElement("div");
+
+                rank.className =
+                    "connection-rank";
+
+                rank.textContent =
+                    index + 1;
+
+
+                const people =
+                    document.createElement("div");
+
+                people.className =
+                    "connection-people";
+
+
+                const sourceName =
+                    document.createElement("div");
+
+                sourceName.className =
+                    "connection-person";
+
+                sourceName.textContent =
+                    source.name;
+
+
+                const targetName =
+                    document.createElement("div");
+
+                targetName.className =
+                    "connection-person";
+
+                targetName.textContent =
+                    target.name;
+
+
+                const meta =
+                    document.createElement("div");
+
+                meta.className =
+                    "connection-meta";
+
+                meta.textContent =
+                    `${source.party || "?"}-${source.state || "?"} ↔ ` +
+                    `${target.party || "?"}-${target.state || "?"}` +
+                    (
+                        edge.crossParty
+                            ? " • Cross-party"
+                            : " • Same party"
+                    );
+
+
+                people.appendChild(
+                    sourceName
+                );
+
+                people.appendChild(
+                    targetName
+                );
+
+                people.appendChild(
+                    meta
+                );
+
+
+                const count =
+                    document.createElement("div");
+
+                count.className =
+                    "connection-count";
+
+                count.textContent =
+                    edge.sharedBillCount;
+
+
+                const countLabel =
+                    document.createElement("span");
+
+                countLabel.className =
+                    "connection-count-label";
+
+                countLabel.textContent =
+                    "bills";
+
+
+                count.appendChild(
+                    countLabel
+                );
+
+
+                row.appendChild(rank);
+                row.appendChild(people);
+                row.appendChild(count);
+
+                list.appendChild(row);
+            }
+        );
+    }
+
+    // ========================================================
+    // CONNECTION TOOLTIP
+    // ========================================================
+
+    const tooltip =
+        d3.select(
+            "#networkTooltip"
+        );
+
+
+    function escapeHtml(value) {
+
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+
+    }
+
+
+    function showConnectionTooltip(
+        event,
+        d
+    ) {
+
+        const source =
+            typeof d.source === "object"
+                ? d.source
+                : data.nodes.find(
+                    n => n.id === d.source
+                );
+
+        const target =
+            typeof d.target === "object"
+                ? d.target
+                : data.nodes.find(
+                    n => n.id === d.target
+                );
+
+
+        if (!source || !target) {
+
+            console.warn(
+                "Could not find nodes for edge:",
+                d
+            );
+
+            return;
+
+        }
+
+
+        tooltip
+            .html(
+                `
+                <div class="network-tooltip-name">
+                    ${escapeHtml(source.name)}
+                </div>
+
+                <div class="network-tooltip-party">
+                    ${escapeHtml(source.party || "?")}-${escapeHtml(source.state || "?")}
+                </div>
+
+                <div class="network-tooltip-divider"></div>
+
+                <div class="network-tooltip-name">
+                    ${escapeHtml(target.name)}
+                </div>
+
+                <div class="network-tooltip-party">
+                    ${escapeHtml(target.party || "?")}-${escapeHtml(target.state || "?")}
+                </div>
+
+                <div class="network-tooltip-divider"></div>
+
+                <div class="network-tooltip-shared">
+                    ${d.sharedBillCount} shared bills
+                </div>
+
+                <div class="network-tooltip-type">
+                    ${
+                        d.crossParty
+                            ? "Cross-party relationship"
+                            : "Same-party relationship"
+                    }
+                </div>
+                `
+            )
+            .style(
+                "display",
+                "block"
+            );
+
+
+        positionTooltip(event);
+
+    }
+
+
+    function positionTooltip(event) {
+
+        const tooltipElement =
+            document.getElementById(
+                "networkTooltip"
+            );
+
+        if (!tooltipElement)
+            return;
+
+
+        const tooltipWidth =
+            tooltipElement.offsetWidth;
+
+        const tooltipHeight =
+            tooltipElement.offsetHeight;
+
+
+        let x =
+            event.clientX + 15;
+
+        let y =
+            event.clientY + 15;
+
+
+        if (
+            x + tooltipWidth >
+            window.innerWidth - 10
+        ) {
+
+            x =
+                event.clientX -
+                tooltipWidth -
+                15;
+
+        }
+
+
+        if (
+            y + tooltipHeight >
+            window.innerHeight - 10
+        ) {
+
+            y =
+                event.clientY -
+                tooltipHeight -
+                15;
+
+        }
+
+
+        tooltip
+            .style(
+                "left",
+                `${Math.max(5, x)}px`
+            )
+            .style(
+                "top",
+                `${Math.max(5, y)}px`
+            );
+
+    }
+
+
+    function hideConnectionTooltip() {
+
+        tooltip
+            .style(
+                "display",
+                "none"
+            );
+
+    }
+
+
+    links
+        .on(
+            "mouseover",
+            function(event, d) {
+
+                d3.select(this)
+                    .attr(
+                        "stroke-opacity",
+                        1
+                    )
+                    .attr(
+                        "stroke-width",
+                        getEdgeWidth(d) + 3
+                    )
+                    .attr(
+                        "stroke-opacity",
+                        1
+                    );
+
+                showConnectionTooltip(
+                    event,
+                    d
+                );
+
+            }
+        )
+        .on(
+            "mousemove",
+            function(event) {
+
+                positionTooltip(
+                    event
+                );
+
+            }
+        )
+        .on(
+            "mouseout",
+            function(event, d) {
+
+                d3.select(this)
+                    .attr(
+                        "stroke-opacity",
+                        isImportantEdge(d)
+                            ? .65
+                            : .30
+                    )
+                    .attr(
+                        "stroke-width",
+                        getEdgeWidth(d)
+                    )
+                    .attr(
+                        "stroke",
+                        isImportantEdge(d)
+                            ? "#555"
+                            : "#c7c7c7"
+                    );
+
+                hideConnectionTooltip();
+
+            }
+        );
+
+
+    // ========================================================
+    // NODES
+    // ========================================================
+
+    const nodes =
+        graphGroup
+            .append("g")
+            .attr(
+                "class",
+                "nodes"
+            )
+            .selectAll("g")
+            .data(data.nodes)
+            .enter()
+            .append("g")
+            .style(
+                "cursor",
+                "pointer"
+            );
+
+
+    nodes
+        .append("circle")
+        .attr(
+            "r",
+            nodeRadius
+        )
+        .attr(
+            "fill",
+            d => {
+
+                if (d.party === "D")
+                    return "#2166ac";
+
+                if (d.party === "R")
+                    return "#b2182b";
+
+                return "#777";
+
+            }
+        )
+        .attr(
+            "stroke",
+            d =>
+                d.isSelected
+                    ? "#111"
+                    : "#fff"
+        )
+        .attr(
+            "stroke-width",
+            d =>
+                d.isSelected
+                    ? 3
+                    : 1.5
+        );
+
+
+    // ========================================================
+    // NODE LABELS
+    // ========================================================
+
+    nodes
+        .append("text")
+        .text(
+            d => d.name
+        )
+        .attr(
+            "x",
+            nodeRadius + 6
+        )
+        .attr(
+            "y",
+            4
+        )
+        .attr(
+            "font-size",
+            "11px"
+        )
+        .attr(
+            "fill",
+            "#333"
+        )
+        .style(
+            "pointer-events",
+            "none"
+        );
+
+
+    // ========================================================
+    // NODE TOOLTIP
+    // ========================================================
+
+    nodes
+        .append("title")
+        .text(
+            d =>
+                `${d.name}\n` +
+                `${d.party || "?"}-${d.state || "?"}\n` +
+                `Relationships: ${d.relationshipCount}\n` +
+                `Bills: ${d.billCount}`
+        );
+
+
+    // ========================================================
+    // FORCE SIMULATION
+    // ========================================================
+
+    simulation =
+        d3.forceSimulation(
+            data.nodes
+        )
+
+            .force(
+                "link",
+                d3.forceLink(
+                    data.edges
+                )
+                    .id(
+                        d => d.id
+                    )
+                    .distance(
+                        d =>
+                            Math.max(
+                                70,
+                                105 -
+                                Math.min(
+                                    d.sharedBillCount * 2.5,
+                                    45
+                                )
+                            )
+                    )
+                    .strength(.45)
+            )
+
+            .force(
+                "charge",
+                d3.forceManyBody()
+                    .strength(-110)
+                    .distanceMax(500)
+            )
+
+            .force(
+                "center",
+                d3.forceCenter(
+                    width / 2,
+                    height / 2
+                )
+            )
+
+            .force(
+                "collision",
+                d3.forceCollide()
+                    .radius(
+                        nodeRadius + 10
+                    )
+                    .strength(.9)
+            )
+
+            .on(
+                "tick",
+                function () {
+
+                    links
+                        .attr(
+                            "x1",
+                            d => d.source.x
+                        )
+                        .attr(
+                            "y1",
+                            d => d.source.y
+                        )
+                        .attr(
+                            "x2",
+                            d => d.target.x
+                        )
+                        .attr(
+                            "y2",
+                            d => d.target.y
+                        );
+
+
+                    nodes.attr(
+                        "transform",
+                        d =>
+                            `translate(${d.x},${d.y})`
+                    );
+
+                }
+            );
+
+
+    // ========================================================
+    // NODE DRAGGING
+    // ========================================================
+
+    nodes.call(
+        d3.drag()
+
+            .on(
+                "start",
+                function(event, d) {
+
+                    event.sourceEvent
+                        .stopPropagation();
+
+                    if (!event.active)
+                        simulation
+                            .alphaTarget(.25)
+                            .restart();
+
+                    d.fx = d.x;
+                    d.fy = d.y;
+
+                }
+            )
+
+            .on(
+                "drag",
+                function(event, d) {
+
+                    event.sourceEvent
+                        .stopPropagation();
+
+                    d.fx = event.x;
+                    d.fy = event.y;
+
+                }
+            )
+
+            .on(
+                "end",
+                function(event, d) {
+
+                    event.sourceEvent
+                        .stopPropagation();
+
+                    if (!event.active)
+                        simulation
+                            .alphaTarget(0);
+
+                    d.fx = null;
+                    d.fy = null;
+
+                }
+            )
+    );
+
+
+    // ========================================================
+    // INITIAL VIEW
+    // ========================================================
+
+    const initialScale =
+        Math.min(
+            1,
+            Math.max(
+                .65,
+                Math.min(
+                    width / 1000,
+                    height / 750
+                )
+            )
+        );
+
+
+    svg.call(
+        zoom.transform,
+        d3.zoomIdentity
+            .translate(
+                width / 2 *
+                (1 - initialScale),
+
+                height / 2 *
+                (1 - initialScale)
+            )
+            .scale(
+                initialScale
+            )
+    );
+
+}
+
+
+// ============================================================
+// RESIZE
+// ============================================================
+
+window.addEventListener(
+    "resize",
+    function () {
+
+        if (!svg || !simulation)
+            return;
+
+        const container =
+            document.getElementById(
+                "network"
+            );
+
+        const width =
+            container.clientWidth;
+
+        const height =
+            container.clientHeight;
+
+        if (
+            width <= 0 ||
+            height <= 0
+        )
+            return;
+
+
+        svg
+            .attr(
+                "width",
+                width
+            )
+            .attr(
+                "height",
+                height
+            )
+            .attr(
+                "viewBox",
+                `0 0 ${width} ${height}`
+            );
+
+
+        simulation
+            .force(
+                "center",
+                d3.forceCenter(
+                    width / 2,
+                    height / 2
+                )
+            )
+            .alpha(.15)
+            .restart();
+
+    }
+);
+
+
+// ============================================================
+// INITIAL LOAD
+// ============================================================
+
+loadMembers();
+
+</script>
+
+

@@ -1,4 +1,4 @@
-@page
+﻿@page
 @model Congress.Web.Pages.NetworkModel
 
 @{
@@ -6,99 +6,87 @@
 }
 
 <style>
-
-    html,
-    body {
-        height: 100%;
-        margin: 0;
-        padding: 0;
-    }
-
-    body {
-        overflow: hidden;
-    }
-
     .network-page {
-        height: 100vh;
-        height: 100dvh;
+        width: 100%;
+        height: calc(100vh - 100px);
+        min-height: 700px;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        box-sizing: border-box;
     }
 
     .network-toolbar {
-        flex: 0 0 auto;
-        padding: 10px 15px;
+        flex-shrink: 0;
         display: flex;
         align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
+        gap: 14px;
+        padding: 12px 16px;
         border-bottom: 1px solid #ddd;
-        background: white;
-        z-index: 10;
+        background: #fff;
+        flex-wrap: wrap;
     }
 
-    .network-toolbar label {
+    .toolbar-group {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .toolbar-label {
+        font-size: 13px;
         font-weight: 600;
-        margin-right: 3px;
+        color: #444;
+        white-space: nowrap;
     }
 
-    .network-toolbar select,
-    .network-toolbar button {
+    .network-toolbar select {
+        height: 34px;
+        padding: 4px 8px;
+        border: 1px solid #bbb;
+        border-radius: 5px;
+        background: white;
         font-size: 14px;
     }
 
-    #network {
-        flex: 1 1 auto;
-        min-height: 0;
-        min-width: 0;
+    .people-selector {
         position: relative;
-        overflow: hidden;
-        background: #fafafa;
-        cursor: grab;
-    }
-
-    #network:active {
-        cursor: grabbing;
-    }
-
-    #network svg {
-        display: block;
-        width: 100%;
-        height: 100%;
-    }
-
-    .people-dropdown {
-        position: relative;
-        width: 390px;
     }
 
     .people-button {
-        width: 100%;
-        text-align: left;
-        padding: 5px 9px;
+        height: 34px;
+        min-width: 210px;
+        padding: 4px 32px 4px 10px;
+        border: 1px solid #bbb;
+        border-radius: 5px;
         background: white;
-        border: 1px solid #aaa;
-        border-radius: 4px;
+        text-align: left;
+        font-size: 14px;
         cursor: pointer;
+        position: relative;
+    }
+
+    .people-button::after {
+        content: "▼";
+        position: absolute;
+        right: 10px;
+        top: 8px;
+        font-size: 10px;
+        color: #666;
     }
 
     .people-menu {
         display: none;
         position: absolute;
-        top: calc(100% + 3px);
+        z-index: 1000;
+        top: 40px;
         left: 0;
-        width: 390px;
+        width: 330px;
         max-height: 500px;
-        overflow-y: auto;
         background: white;
-        border: 1px solid #aaa;
-        border-radius: 4px;
-        box-shadow: 0 4px 12px rgba(0,0,0,.18);
-        z-index: 100;
-        padding: 8px;
-        box-sizing: border-box;
+        border: 1px solid #bbb;
+        border-radius: 5px;
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.15);
+        overflow: hidden;
     }
 
     .people-menu.open {
@@ -107,265 +95,439 @@
 
     .people-actions {
         display: flex;
-        gap: 6px;
-        margin-bottom: 8px;
-        padding-bottom: 8px;
+        gap: 8px;
+        padding: 9px;
         border-bottom: 1px solid #ddd;
+        background: #f7f7f7;
     }
 
     .people-actions button {
-        padding: 4px 8px;
+        padding: 5px 9px;
+        border: 1px solid #aaa;
+        border-radius: 4px;
+        background: white;
+        cursor: pointer;
         font-size: 12px;
+    }
+
+    .people-actions button:hover {
+        background: #eee;
+    }
+
+    .people-list {
+        max-height: 440px;
+        overflow-y: auto;
+        padding: 5px 0;
     }
 
     .person-option {
         display: flex;
         align-items: center;
-        gap: 7px;
-        padding: 3px 2px;
+        gap: 8px;
+        padding: 5px 10px;
+        cursor: pointer;
         font-size: 13px;
     }
 
     .person-option:hover {
-        background: #f1f1f1;
+        background: #f0f0f0;
     }
 
     .person-option input {
         margin: 0;
     }
 
+    .load-button {
+        height: 34px;
+        padding: 0 16px;
+        border: 1px solid #333;
+        border-radius: 5px;
+        background: #333;
+        color: white;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .load-button:hover {
+        background: #111;
+    }
+
+    .load-button:disabled {
+        background: #999;
+        border-color: #999;
+        cursor: not-allowed;
+    }
+
+    .network-status {
+        font-size: 13px;
+        color: #666;
+        margin-left: auto;
+    }
+
+    .network-content {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        overflow: hidden;
+        background: #fafafa;
+    }
+
+    #network {
+        flex: 1;
+        min-width: 0;
+        min-height: 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    #network svg {
+        display: block;
+        width: 100%;
+        height: 100%;
+    }
+
+    .connections-panel {
+        flex: 0 0 330px;
+        width: 330px;
+        border-left: 1px solid #ddd;
+        background: white;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .connections-header {
+        flex-shrink: 0;
+        padding: 16px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .connections-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #222;
+        margin: 0;
+    }
+
+    .connections-subtitle {
+        margin-top: 4px;
+        font-size: 12px;
+        color: #777;
+    }
+
+    .connections-list {
+        flex: 1;
+        overflow-y: auto;
+    }
+
+    .connection-row {
+        display: grid;
+        grid-template-columns: 30px 1fr auto;
+        gap: 8px;
+        align-items: center;
+        padding: 10px 12px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .connection-row:hover {
+        background: #f7f7f7;
+    }
+
+    .connection-rank {
+        font-size: 12px;
+        font-weight: 700;
+        color: #888;
+        text-align: center;
+    }
+
+    .connection-people {
+        min-width: 0;
+    }
+
+    .connection-person {
+        font-size: 13px;
+        font-weight: 600;
+        color: #222;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .connection-person + .connection-person {
+        margin-top: 2px;
+    }
+
+    .connection-meta {
+        margin-top: 3px;
+        font-size: 11px;
+        color: #888;
+    }
+
+    .connection-count {
+        text-align: right;
+        white-space: nowrap;
+    }
+
+    .connection-count-number {
+        font-size: 16px;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .connection-count-label {
+        font-size: 10px;
+        color: #888;
+    }
+
+    .connection-empty {
+        padding: 30px 20px;
+        text-align: center;
+        color: #888;
+        font-size: 13px;
+    }
+
+    .network-tooltip {
+        position: fixed;
+        display: none;
+        z-index: 2000;
+        max-width: 320px;
+        padding: 10px 12px;
+        background: rgba(20, 20, 20, 0.94);
+        color: white;
+        border-radius: 5px;
+        box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3);
+        font-size: 12px;
+        line-height: 1.45;
+        pointer-events: none;
+    }
+
+    .network-tooltip-title {
+        font-size: 14px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+
+    .network-tooltip-row {
+        margin-top: 2px;
+    }
+
     .legend {
         position: absolute;
         left: 15px;
         bottom: 15px;
-        background: rgba(255,255,255,.92);
-        border: 1px solid #ccc;
+        z-index: 10;
+        padding: 10px 12px;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid #ddd;
         border-radius: 5px;
-        padding: 8px 10px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
         font-size: 12px;
-        line-height: 1.6;
-        box-shadow: 0 2px 6px rgba(0,0,0,.12);
-        pointer-events: none;
+    }
+
+    .legend-title {
+        font-weight: 700;
+        margin-bottom: 7px;
     }
 
     .legend-row {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 7px;
+        margin-top: 4px;
+    }
+
+    .legend-node {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 1px solid #fff;
+        box-shadow: 0 0 0 1px #aaa;
     }
 
     .legend-line {
-        width: 25px;
+        width: 28px;
         height: 0;
-        border-top: 2px solid #555;
+        border-top: 3px solid #555;
     }
 
     .legend-line.dashed {
         border-top-style: dashed;
     }
 
-    .legend-dot {
-        width: 10px;
-        height: 10px;
-        border-radius: 50%;
-        display: inline-block;
-    }
-
-    .legend-dot.dem {
+    .party-democrat {
         background: #2166ac;
     }
 
-    .legend-dot.rep {
+    .party-republican {
         background: #b2182b;
     }
 
-    .legend-dot.other {
+    .party-other {
         background: #777;
     }
 
-    .network-status {
-        font-size: 13px;
-        color: #666;
-        margin-left: 5px;
+    @@media (max-width: 900px) {
+        .network-content {
+            flex-direction: column;
+        }
+
+        .connections-panel {
+            flex: 0 0 300px;
+            width: 100%;
+            border-left: none;
+            border-top: 1px solid #ddd;
+        }
+
+        .network-status {
+            width: 100%;
+            margin-left: 0;
+        }
     }
-
-
-    /* ========================================================
-       CONNECTION TOOLTIP
-       ======================================================== */
-
-    .network-tooltip {
-        position: fixed;
-        display: none;
-        pointer-events: none;
-        z-index: 9999;
-
-        background: rgba(30, 30, 30, 0.96);
-        color: white;
-
-        padding: 10px 12px;
-
-        border-radius: 6px;
-
-        font-size: 13px;
-        line-height: 1.4;
-
-        box-shadow:
-            0 4px 14px rgba(0, 0, 0, .3);
-
-        min-width: 180px;
-        max-width: 280px;
-    }
-
-    .network-tooltip-name {
-        font-weight: 600;
-        font-size: 14px;
-    }
-
-    .network-tooltip-party {
-        color: #ccc;
-        font-size: 12px;
-    }
-
-    .network-tooltip-divider {
-        border-top: 1px solid rgba(255,255,255,.25);
-        margin: 7px 0;
-    }
-
-    .network-tooltip-shared {
-        font-weight: 600;
-        margin-top: 5px;
-    }
-
-    .network-tooltip-type {
-        color: #ccc;
-        font-size: 12px;
-        margin-top: 2px;
-    }
-
 </style>
-
 
 <div class="network-page">
 
     <div class="network-toolbar">
 
-        <label>People</label>
+        <div class="toolbar-group">
+            <span class="toolbar-label">People</span>
 
-        <div class="people-dropdown">
+            <div class="people-selector">
 
-            <button type="button"
-                    id="peopleButton"
-                    class="people-button">
-                Loading people...
-            </button>
+                <button type="button"
+                        id="peopleButton"
+                        class="people-button">
+                    Loading people...
+                </button>
 
-            <div id="peopleMenu"
-                 class="people-menu">
+                <div id="peopleMenu" class="people-menu">
 
-                <div class="people-actions">
+                    <div class="people-actions">
+                        <button type="button" id="selectAllButton">
+                            Select All
+                        </button>
 
-                    <button type="button"
-                            id="selectAllButton">
-                        Select All
-                    </button>
+                        <button type="button" id="clearAllButton">
+                            Clear All
+                        </button>
+                    </div>
 
-                    <button type="button"
-                            id="clearAllButton">
-                        Clear All
-                    </button>
+                    <div id="peopleList" class="people-list">
+                    </div>
 
                 </div>
-
-                <div id="peopleList"></div>
-
             </div>
-
         </div>
 
+        <div class="toolbar-group">
+            <label class="toolbar-label" for="networkSize">
+                Network Size
+            </label>
 
-        <label for="networkSize">
-            Network size
-        </label>
+            <select id="networkSize">
+                @for (var i = 2; i <= 1000; i++)
+                {
+                    if (i == 50)
+                    {
+                        <option value="@i" selected>@i</option>
+                    }
+                    else
+                    {
+                        <option value="@i">@i</option>
+                    }
+                }
+            </select>
+        </div>
 
-        <select id="networkSize">
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option> 
-            <option value="10">10</option>
-            <option value="15">15</option>
-            <option value="20">20</option>
-            <option value="30">30</option>
-            <option value="50" selected>50</option>
-            <option value="75">75</option>
-            <option value="100">100</option>
-            <option value="150">150</option>
-            <option value="250">250</option>
-            <option value="500">500</option>
-            <option value="750">750</option>
-            <option value="1000">1000</option>
+        <div class="toolbar-group">
+            <label class="toolbar-label" for="minSharedBills">
+                Min Shared Bills
+            </label>
 
-        </select>
-
-
-        <label for="minSharedBills">
-            Min shared bills
-        </label>
-
-        <select id="minSharedBills">
-
-            <option value="1">1</option>
-            <option value="5">5</option>
-            <option value="10">10</option>
-            <option value="20">20</option>
-            <option value="30">30</option>
-            <option value="40">40</option>
-            <option value="50" selected>50</option>
-            <option value="75">75</option>
-            <option value="100">100</option>
-
-        </select>
-
+            <select id="minSharedBills">
+                @for (var i = 1; i <= 100; i++)
+                {
+                    if (i == 50)
+                    {
+                        <option value="@i" selected>@i</option>
+                    }
+                    else
+                    {
+                        <option value="@i">@i</option>
+                    }
+                }
+            </select>
+        </div>
 
         <button type="button"
-                id="loadNetworkButton">
+                id="loadNetworkButton"
+                class="load-button">
             Load Network
         </button>
 
-        <span id="networkStatus"
-              class="network-status"></span>
+        <div id="networkStatus" class="network-status">
+            Loading members...
+        </div>
 
     </div>
 
+    <div class="network-content">
 
-    <div id="network">
+        <div id="network">
 
-        <div class="legend">
+            <div class="legend">
 
-            <div class="legend-row">
-                <span class="legend-dot dem"></span>
-                Democrat
+                <div class="legend-title">
+                    Legend
+                </div>
+
+                <div class="legend-row">
+                    <span class="legend-node party-democrat"></span>
+                    <span>Democrat</span>
+                </div>
+
+                <div class="legend-row">
+                    <span class="legend-node party-republican"></span>
+                    <span>Republican</span>
+                </div>
+
+                <div class="legend-row">
+                    <span class="legend-node party-other"></span>
+                    <span>Other</span>
+                </div>
+
+                <div class="legend-row">
+                    <span class="legend-line"></span>
+                    <span>Same party</span>
+                </div>
+
+                <div class="legend-row">
+                    <span class="legend-line dashed"></span>
+                    <span>Cross party</span>
+                </div>
+
             </div>
 
-            <div class="legend-row">
-                <span class="legend-dot rep"></span>
-                Republican
+        </div>
+
+        <div class="connections-panel">
+
+            <div class="connections-header">
+
+                <h2 class="connections-title">
+                    Top 20 Connections
+                </h2>
+
+                <div class="connections-subtitle">
+                    Strongest relationships in displayed network
+                </div>
+
             </div>
 
-            <div class="legend-row">
-                <span class="legend-dot other"></span>
-                Other
-            </div>
-
-            <div class="legend-row">
-                <span class="legend-line"></span>
-                Same party
-            </div>
-
-            <div class="legend-row">
-                <span class="legend-line dashed"></span>
-                Cross party
+            <div id="connectionsList" class="connections-list">
+                <div class="connection-empty">
+                    Load a network to see connections.
+                </div>
             </div>
 
         </div>
@@ -374,1061 +536,576 @@
 
 </div>
 
-
-<!-- Tooltip is outside the SVG -->
-<div id="networkTooltip"
-     class="network-tooltip">
-</div>
-
+<div id="networkTooltip" class="network-tooltip"></div>
 
 <script src="https://d3js.org/d3.v7.min.js"></script>
 
-
 <script>
 
-let allMembers = [];
-let selectedIds = new Set();
+    // ========================================================
+    // GLOBAL STATE
+    // ========================================================
 
-let svg = null;
-let simulation = null;
+    let allMembers = [];
+    let selectedIds = new Set();
 
-
-// ============================================================
-// PEOPLE SELECTOR
-// ============================================================
-
-async function loadMembers() {
-
-    try {
-
-        const response =
-            await fetch("?handler=Members");
-
-        if (!response.ok)
-            throw new Error(
-                "HTTP " + response.status
-            );
-
-        allMembers =
-            await response.json();
-
-        selectedIds =
-            new Set(
-                allMembers.map(d => d.id)
-            );
-
-        renderPeopleList();
-        updatePeopleButton();
-
-    }
-    catch (error) {
-
-        console.error(
-            "Members loading error:",
-            error
-        );
-
-        document
-            .getElementById("peopleButton")
-            .textContent =
-                "Error loading people";
-
-    }
-}
+    let svg = null;
+    let simulation = null;
 
 
-function renderPeopleList() {
+    // ========================================================
+    // LOAD MEMBERS
+    // ========================================================
 
-    const list =
-        document.getElementById("peopleList");
+    async function loadMembers() {
 
-    list.innerHTML = "";
+        const status = document.getElementById("networkStatus");
 
-    for (const person of allMembers) {
+        try {
 
-        const label =
-            document.createElement("label");
+            status.textContent = "Loading members...";
 
-        label.className =
-            "person-option";
+            const response =
+                await fetch("?handler=Members");
 
-        const checkbox =
-            document.createElement("input");
-
-        checkbox.type =
-            "checkbox";
-
-        checkbox.value =
-            person.id;
-
-        checkbox.checked =
-            selectedIds.has(person.id);
-
-        checkbox.addEventListener(
-            "change",
-            function () {
-
-                if (this.checked)
-                    selectedIds.add(this.value);
-                else
-                    selectedIds.delete(this.value);
-
-                updatePeopleButton();
-
+            if (!response.ok) {
+                throw new Error(
+                    `Members request failed: ${response.status}`
+                );
             }
-        );
 
-        const text =
-            document.createElement("span");
-
-        text.textContent =
-            `${person.name} (${person.party || "?"}-${person.state || "?"})`;
-
-        label.appendChild(checkbox);
-        label.appendChild(text);
-
-        list.appendChild(label);
-    }
-}
-
-
-function updatePeopleButton() {
-
-    const button =
-        document.getElementById("peopleButton");
-
-    if (selectedIds.size === allMembers.length) {
-
-        button.textContent =
-            `All people (${allMembers.length})`;
-
-    }
-    else if (selectedIds.size === 0) {
-
-        button.textContent =
-            "No people selected";
-
-    }
-    else {
-
-        button.textContent =
-            `${selectedIds.size} people selected`;
-
-    }
-}
-
-
-document
-    .getElementById("peopleButton")
-    .addEventListener(
-        "click",
-        function () {
-
-            document
-                .getElementById("peopleMenu")
-                .classList.toggle("open");
-
-        }
-    );
-
-
-document
-    .getElementById("selectAllButton")
-    .addEventListener(
-        "click",
-        function () {
+            allMembers = await response.json();
 
             selectedIds =
                 new Set(
-                    allMembers.map(d => d.id)
+                    allMembers.map(
+                        person => String(person.id)
+                    )
                 );
 
             renderPeopleList();
             updatePeopleButton();
 
-        }
-    );
-
-
-document
-    .getElementById("clearAllButton")
-    .addEventListener(
-        "click",
-        function () {
-
-            selectedIds.clear();
-
-            renderPeopleList();
-            updatePeopleButton();
+            status.textContent =
+                `${allMembers.length.toLocaleString()} members loaded`;
 
         }
-    );
+        catch (error) {
+
+            console.error(error);
+
+            status.textContent =
+                "Error loading members";
+
+            document.getElementById("peopleList").innerHTML =
+                `<div class="connection-empty">
+                    Unable to load members.
+                </div>`;
+        }
+    }
 
 
-document.addEventListener(
-    "click",
-    function (event) {
+    // ========================================================
+    // PEOPLE LIST
+    // ========================================================
 
-        const dropdown =
-            document.querySelector(
-                ".people-dropdown"
+    function renderPeopleList() {
+
+        const list =
+            document.getElementById("peopleList");
+
+        list.innerHTML = "";
+
+        allMembers.forEach(person => {
+
+            const label =
+                document.createElement("label");
+
+            label.className =
+                "person-option";
+
+            const checkbox =
+                document.createElement("input");
+
+            checkbox.type = "checkbox";
+
+            checkbox.value =
+                String(person.id);
+
+            checkbox.checked =
+                selectedIds.has(
+                    String(person.id)
+                );
+
+            checkbox.addEventListener(
+                "change",
+                () => {
+
+                    const id =
+                        String(person.id);
+
+                    if (checkbox.checked) {
+                        selectedIds.add(id);
+                    }
+                    else {
+                        selectedIds.delete(id);
+                    }
+
+                    updatePeopleButton();
+                }
             );
 
-        if (!dropdown.contains(event.target)) {
+            const text =
+                document.createElement("span");
+
+            text.textContent =
+                `${person.name} (${person.party || "?"}-${person.state || "?"})`;
+
+            label.appendChild(checkbox);
+            label.appendChild(text);
+
+            list.appendChild(label);
+        });
+    }
+
+
+    // ========================================================
+    // PEOPLE BUTTON
+    // ========================================================
+
+    function updatePeopleButton() {
+
+        const button =
+            document.getElementById("peopleButton");
+
+        if (selectedIds.size === 0) {
+
+            button.textContent =
+                "No people selected";
+
+            return;
+        }
+
+        if (selectedIds.size === allMembers.length) {
+
+            button.textContent =
+                "All people";
+
+            return;
+        }
+
+        button.textContent =
+            `${selectedIds.size} people selected`;
+    }
+
+
+    // ========================================================
+    // PEOPLE DROPDOWN
+    // ========================================================
+
+    document
+        .getElementById("peopleButton")
+        .addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+
+                const menu =
+                    document.getElementById("peopleMenu");
+
+                menu.classList.toggle("open");
+            }
+        );
+
+
+    document
+        .getElementById("peopleMenu")
+        .addEventListener(
+            "click",
+            event => {
+
+                event.stopPropagation();
+            }
+        );
+
+
+    document.addEventListener(
+        "click",
+        () => {
 
             document
                 .getElementById("peopleMenu")
                 .classList.remove("open");
-
-        }
-
-    }
-);
-
-
-// ============================================================
-// LOAD NETWORK
-// ============================================================
-
-document
-    .getElementById("loadNetworkButton")
-    .addEventListener(
-        "click",
-        loadNetwork
-    );
-
-
-async function loadNetwork() {
-
-    const status =
-        document.getElementById(
-            "networkStatus"
-        );
-
-    if (selectedIds.size === 0) {
-
-        status.textContent =
-            "Select at least one person.";
-
-        return;
-
-    }
-
-    const networkSize =
-        document.getElementById(
-            "networkSize"
-        ).value;
-
-    const minSharedBills =
-        document.getElementById(
-            "minSharedBills"
-        ).value;
-
-    status.textContent =
-        "Loading...";
-
-    try {
-
-        const params =
-            new URLSearchParams();
-
-        params.set(
-            "selectedIds",
-            Array.from(selectedIds).join(",")
-        );
-
-        params.set(
-            "networkSize",
-            networkSize
-        );
-
-        params.set(
-            "minSharedBills",
-            minSharedBills
-        );
-
-        const response =
-            await fetch(
-                `?handler=Data&${params.toString()}`
-            );
-
-        if (!response.ok) {
-
-            const message =
-                await response.text();
-
-            throw new Error(message);
-
-        }
-
-        const data =
-            await response.json();
-
-        console.log(
-            "Network data:",
-            data
-        );
-
-        drawNetwork(data);
-
-        status.textContent =
-            `${data.nodes.length} people, ${data.edges.length} connections`;
-
-    }
-    catch (error) {
-
-        console.error(
-            "Network loading error:",
-            error
-        );
-
-        status.textContent =
-            "Error loading network: " +
-            error.message;
-
-    }
-}
-
-
-// ============================================================
-// DRAW NETWORK
-// ============================================================
-
-function drawNetwork(data) {
-
-    const container =
-        document.getElementById("network");
-
-    const width =
-        container.clientWidth;
-
-    const height =
-        container.clientHeight;
-
-    if (width <= 0 || height <= 0) {
-
-        console.error(
-            "Network container has invalid size:",
-            width,
-            height
-        );
-
-        return;
-
-    }
-
-    if (simulation)
-        simulation.stop();
-
-    d3.select("#network svg")
-        .remove();
-
-
-    d3.select("#networkTooltip")
-        .style(
-            "display",
-            "none"
-        );
-
-
-    svg =
-        d3.select("#network")
-            .append("svg")
-            .attr(
-                "width",
-                width
-            )
-            .attr(
-                "height",
-                height
-            )
-            .attr(
-                "viewBox",
-                `0 0 ${width} ${height}`
-            )
-            .style(
-                "cursor",
-                "grab"
-            );
-
-
-    // ========================================================
-    // GRAPH GROUP
-    // ========================================================
-
-    const graphGroup =
-        svg.append("g")
-            .attr(
-                "class",
-                "graph-group"
-            );
-
-
-    // ========================================================
-    // ZOOM / PAN
-    // ========================================================
-
-    const zoom =
-        d3.zoom()
-            .scaleExtent([
-                0.35,
-                3
-            ])
-            .on(
-                "start",
-                function () {
-
-                    svg.style(
-                        "cursor",
-                        "grabbing"
-                    );
-
-                }
-            )
-            .on(
-                "zoom",
-                function (event) {
-
-                    graphGroup.attr(
-                        "transform",
-                        event.transform
-                    );
-
-                }
-            )
-            .on(
-                "end",
-                function () {
-
-                    svg.style(
-                        "cursor",
-                        "grab"
-                    );
-
-                }
-            );
-
-
-    svg.call(zoom);
-
-
-    svg.on(
-        "dblclick.zoom",
-        function () {
-
-            svg.transition()
-                .duration(400)
-                .call(
-                    zoom.transform,
-                    d3.zoomIdentity
-                );
-
         }
     );
 
 
     // ========================================================
-    // ALL NODES SAME SIZE
+    // SELECT ALL
     // ========================================================
 
-    const nodeRadius = 12;
+    document
+        .getElementById("selectAllButton")
+        .addEventListener(
+            "click",
+            () => {
 
+                selectedIds =
+                    new Set(
+                        allMembers.map(
+                            person => String(person.id)
+                        )
+                    );
 
-    // ========================================================
-    // EDGE WIDTH
-    // ========================================================
-
-    const maxSharedBills =
-        d3.max(
-            data.edges,
-            d => d.sharedBillCount
-        ) || 1;
-
-    const edgeWidthScale =
-        d3.scaleLinear()
-            .domain([
-                1,
-                maxSharedBills
-            ])
-            .range([
-                1.2,
-                8
-            ]);
-
-
-    // ========================================================
-    // LINKS
-    // ========================================================
-
-    const links =
-        graphGroup
-            .append("g")
-            .attr(
-                "class",
-                "links"
-            )
-            .selectAll("line")
-            .data(data.edges)
-            .enter()
-            .append("line")
-            .attr(
-                "stroke",
-                "#777"
-            )
-            .attr(
-                "stroke-width",
-                d =>
-                    edgeWidthScale(
-                        d.sharedBillCount
-                    )
-            )
-            .attr(
-                "stroke-dasharray",
-                d =>
-                    d.crossParty
-                        ? "6,5"
-                        : null
-            )
-            .attr(
-                "stroke-opacity",
-                .55
-            )
-            .style(
-                "cursor",
-                "pointer"
-            );
-
-
-    // ========================================================
-    // CONNECTION TOOLTIP
-    // ========================================================
-
-    const tooltip =
-        d3.select(
-            "#networkTooltip"
+                renderPeopleList();
+                updatePeopleButton();
+            }
         );
 
 
-    function escapeHtml(value) {
+    // ========================================================
+    // CLEAR ALL
+    // ========================================================
 
-        return String(value)
-            .replace(/&/g, "&amp;")
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#039;");
+    document
+        .getElementById("clearAllButton")
+        .addEventListener(
+            "click",
+            () => {
 
-    }
+                selectedIds =
+                    new Set();
 
-
-    function showConnectionTooltip(
-        event,
-        d
-    ) {
-
-        const source =
-            typeof d.source === "object"
-                ? d.source
-                : data.nodes.find(
-                    n => n.id === d.source
-                );
-
-        const target =
-            typeof d.target === "object"
-                ? d.target
-                : data.nodes.find(
-                    n => n.id === d.target
-                );
+                renderPeopleList();
+                updatePeopleButton();
+            }
+        );
 
 
-        if (!source || !target) {
+    // ========================================================
+    // LOAD NETWORK
+    // ========================================================
 
-            console.warn(
-                "Could not find nodes for edge:",
-                d
-            );
-
-            return;
-
-        }
-
-
-        tooltip
-            .html(
-                `
-                <div class="network-tooltip-name">
-                    ${escapeHtml(source.name)}
-                </div>
-
-                <div class="network-tooltip-party">
-                    ${escapeHtml(source.party || "?")}-${escapeHtml(source.state || "?")}
-                </div>
-
-                <div class="network-tooltip-divider"></div>
-
-                <div class="network-tooltip-name">
-                    ${escapeHtml(target.name)}
-                </div>
-
-                <div class="network-tooltip-party">
-                    ${escapeHtml(target.party || "?")}-${escapeHtml(target.state || "?")}
-                </div>
-
-                <div class="network-tooltip-divider"></div>
-
-                <div class="network-tooltip-shared">
-                    ${d.sharedBillCount} shared bills
-                </div>
-
-                <div class="network-tooltip-type">
-                    ${
-                        d.crossParty
-                            ? "Cross-party relationship"
-                            : "Same-party relationship"
-                    }
-                </div>
-                `
-            )
-            .style(
-                "display",
-                "block"
-            );
+    document
+        .getElementById("loadNetworkButton")
+        .addEventListener(
+            "click",
+            loadNetwork
+        );
 
 
-        positionTooltip(event);
+    async function loadNetwork() {
 
-    }
-
-
-    function positionTooltip(event) {
-
-        const tooltipElement =
+        const button =
             document.getElementById(
-                "networkTooltip"
+                "loadNetworkButton"
             );
 
-        if (!tooltipElement)
+        const status =
+            document.getElementById(
+                "networkStatus"
+            );
+
+        if (selectedIds.size === 0) {
+
+            status.textContent =
+                "Select at least one person.";
+
             return;
-
-
-        const tooltipWidth =
-            tooltipElement.offsetWidth;
-
-        const tooltipHeight =
-            tooltipElement.offsetHeight;
-
-
-        let x =
-            event.clientX + 15;
-
-        let y =
-            event.clientY + 15;
-
-
-        if (
-            x + tooltipWidth >
-            window.innerWidth - 10
-        ) {
-
-            x =
-                event.clientX -
-                tooltipWidth -
-                15;
-
         }
 
-
-        if (
-            y + tooltipHeight >
-            window.innerHeight - 10
-        ) {
-
-            y =
-                event.clientY -
-                tooltipHeight -
-                15;
-
-        }
-
-
-        tooltip
-            .style(
-                "left",
-                `${Math.max(5, x)}px`
-            )
-            .style(
-                "top",
-                `${Math.max(5, y)}px`
+        const networkSize =
+            Number(
+                document.getElementById(
+                    "networkSize"
+                ).value
             );
 
+        const minSharedBills =
+            Number(
+                document.getElementById(
+                    "minSharedBills"
+                ).value
+            );
+
+        button.disabled = true;
+
+        status.textContent =
+            "Loading network...";
+
+        try {
+
+            const params =
+                new URLSearchParams();
+
+            params.set(
+                "selectedIds",
+                [...selectedIds].join(",")
+            );
+
+            params.set(
+                "networkSize",
+                String(networkSize)
+            );
+
+            params.set(
+                "minSharedBills",
+                String(minSharedBills)
+            );
+
+            const response =
+                await fetch(
+                    `?handler=Data&${params.toString()}`
+                );
+
+            if (!response.ok) {
+
+                throw new Error(
+                    `Network request failed: ${response.status}`
+                );
+            }
+
+            const data =
+                await response.json();
+
+            console.log(
+                "Network data:",
+                data
+            );
+
+            drawNetwork(data);
+
+            updateConnectionsPanel(data);
+
+            const nodeCount =
+                data.nodes?.length || 0;
+
+            const edgeCount =
+                data.edges?.length || 0;
+
+            status.textContent =
+                `${nodeCount.toLocaleString()} people • ` +
+                `${edgeCount.toLocaleString()} connections`;
+
+        }
+        catch (error) {
+
+            console.error(error);
+
+            status.textContent =
+                "Error loading network.";
+
+            const container =
+                document.getElementById("network");
+
+            container
+                .querySelectorAll("svg")
+                .forEach(
+                    element => element.remove()
+                );
+        }
+        finally {
+
+            button.disabled = false;
+        }
     }
 
 
-    function hideConnectionTooltip() {
-
-        tooltip
-            .style(
-                "display",
-                "none"
-            );
-
-    }
-
-
-    links
-        .on(
-            "mouseover",
-            function(event, d) {
-
-                d3.select(this)
-                    .attr(
-                        "stroke-opacity",
-                        1
-                    )
-                    .attr(
-                        "stroke-width",
-                        edgeWidthScale(
-                            d.sharedBillCount
-                        ) + 2
-                    );
-
-                showConnectionTooltip(
-                    event,
-                    d
-                );
-
-            }
-        )
-        .on(
-            "mousemove",
-            function(event) {
-
-                positionTooltip(
-                    event
-                );
-
-            }
-        )
-        .on(
-            "mouseout",
-            function(event, d) {
-
-                d3.select(this)
-                    .attr(
-                        "stroke-opacity",
-                        .55
-                    )
-                    .attr(
-                        "stroke-width",
-                        edgeWidthScale(
-                            d.sharedBillCount
-                        )
-                    );
-
-                hideConnectionTooltip();
-
-            }
-        );
-
-
     // ========================================================
-    // NODES
+    // CONNECTIONS PANEL
     // ========================================================
 
-    const nodes =
-        graphGroup
-            .append("g")
-            .attr(
-                "class",
-                "nodes"
-            )
-            .selectAll("g")
-            .data(data.nodes)
-            .enter()
-            .append("g")
-            .style(
-                "cursor",
-                "pointer"
-            );
-
-
-    nodes
-        .append("circle")
-        .attr(
-            "r",
-            nodeRadius
-        )
-        .attr(
-            "fill",
-            d => {
-
-                if (d.party === "D")
-                    return "#2166ac";
-
-                if (d.party === "R")
-                    return "#b2182b";
-
-                return "#777";
-
-            }
-        )
-        .attr(
-            "stroke",
-            d =>
-                d.isSelected
-                    ? "#111"
-                    : "#fff"
-        )
-        .attr(
-            "stroke-width",
-            d =>
-                d.isSelected
-                    ? 3
-                    : 1.5
-        );
-
-
-    // ========================================================
-    // NODE LABELS
-    // ========================================================
-
-    nodes
-        .append("text")
-        .text(
-            d => d.name
-        )
-        .attr(
-            "x",
-            nodeRadius + 6
-        )
-        .attr(
-            "y",
-            4
-        )
-        .attr(
-            "font-size",
-            "11px"
-        )
-        .attr(
-            "fill",
-            "#333"
-        )
-        .style(
-            "pointer-events",
-            "none"
-        );
-
-
-    // ========================================================
-    // NODE TOOLTIP
-    // ========================================================
-
-    nodes
-        .append("title")
-        .text(
-            d =>
-                `${d.name}\n` +
-                `${d.party || "?"}-${d.state || "?"}\n` +
-                `Relationships: ${d.relationshipCount}\n` +
-                `Bills: ${d.billCount}`
-        );
-
-
-    // ========================================================
-    // FORCE SIMULATION
-    // ========================================================
-
-    simulation =
-        d3.forceSimulation(
-            data.nodes
-        )
-
-            .force(
-                "link",
-                d3.forceLink(
-                    data.edges
-                )
-                    .id(
-                        d => d.id
-                    )
-                    .distance(
-                        d =>
-                            Math.max(
-                                70,
-                                105 -
-                                Math.min(
-                                    d.sharedBillCount * 2.5,
-                                    45
-                                )
-                            )
-                    )
-                    .strength(.45)
-            )
-
-            .force(
-                "charge",
-                d3.forceManyBody()
-                    .strength(-110)
-                    .distanceMax(500)
-            )
-
-            .force(
-                "center",
-                d3.forceCenter(
-                    width / 2,
-                    height / 2
-                )
-            )
-
-            .force(
-                "collision",
-                d3.forceCollide()
-                    .radius(
-                        nodeRadius + 10
-                    )
-                    .strength(.9)
-            )
-
-            .on(
-                "tick",
-                function () {
-
-                    links
-                        .attr(
-                            "x1",
-                            d => d.source.x
-                        )
-                        .attr(
-                            "y1",
-                            d => d.source.y
-                        )
-                        .attr(
-                            "x2",
-                            d => d.target.x
-                        )
-                        .attr(
-                            "y2",
-                            d => d.target.y
-                        );
-
-
-                    nodes.attr(
-                        "transform",
-                        d =>
-                            `translate(${d.x},${d.y})`
-                    );
-
-                }
-            );
-
-
-    // ========================================================
-    // NODE DRAGGING
-    // ========================================================
-
-    nodes.call(
-        d3.drag()
-
-            .on(
-                "start",
-                function(event, d) {
-
-                    event.sourceEvent
-                        .stopPropagation();
-
-                    if (!event.active)
-                        simulation
-                            .alphaTarget(.25)
-                            .restart();
-
-                    d.fx = d.x;
-                    d.fy = d.y;
-
-                }
-            )
-
-            .on(
-                "drag",
-                function(event, d) {
-
-                    event.sourceEvent
-                        .stopPropagation();
-
-                    d.fx = event.x;
-                    d.fy = event.y;
-
-                }
-            )
-
-            .on(
-                "end",
-                function(event, d) {
-
-                    event.sourceEvent
-                        .stopPropagation();
-
-                    if (!event.active)
-                        simulation
-                            .alphaTarget(0);
-
-                    d.fx = null;
-                    d.fy = null;
-
-                }
-            )
-    );
-
-
-    // ========================================================
-    // INITIAL VIEW
-    // ========================================================
-
-    const initialScale =
-        Math.min(
-            1,
-            Math.max(
-                .65,
-                Math.min(
-                    width / 1000,
-                    height / 750
-                )
-            )
-        );
-
-
-    svg.call(
-        zoom.transform,
-        d3.zoomIdentity
-            .translate(
-                width / 2 *
-                (1 - initialScale),
-
-                height / 2 *
-                (1 - initialScale)
-            )
-            .scale(
-                initialScale
-            )
-    );
-
-}
-
-
-// ============================================================
-// RESIZE
-// ============================================================
-
-window.addEventListener(
-    "resize",
-    function () {
-
-        if (!svg || !simulation)
-            return;
+    function updateConnectionsPanel(data) {
 
         const container =
             document.getElementById(
-                "network"
+                "connectionsList"
             );
+
+        container.innerHTML = "";
+
+        if (!data ||
+            !data.nodes ||
+            !data.edges ||
+            data.edges.length === 0) {
+
+            container.innerHTML =
+                `<div class="connection-empty">
+                    No connections found.
+                </div>`;
+
+            return;
+        }
+
+        const nodeMap =
+            new Map(
+                data.nodes.map(
+                    node => [
+                        String(node.id),
+                        node
+                    ]
+                )
+            );
+
+        const rankedEdges =
+            [...data.edges]
+                .sort(
+                    (a, b) =>
+                        (Number(b.sharedBillCount) || 0) -
+                        (Number(a.sharedBillCount) || 0)
+                )
+                .slice(0, 20);
+
+        rankedEdges.forEach(
+            (edge, index) => {
+
+                const source =
+                    nodeMap.get(
+                        String(
+                            typeof edge.source === "object"
+                                ? edge.source.id
+                                : edge.source
+                        )
+                    );
+
+                const target =
+                    nodeMap.get(
+                        String(
+                            typeof edge.target === "object"
+                                ? edge.target.id
+                                : edge.target
+                        )
+                    );
+
+                if (!source || !target) {
+                    return;
+                }
+
+                const sourceParty =
+                    source.party || "?";
+
+                const targetParty =
+                    target.party || "?";
+
+                const relationshipType =
+                    sourceParty === targetParty
+                        ? "Same party"
+                        : "Cross party";
+
+                const row =
+                    document.createElement("div");
+
+                row.className =
+                    "connection-row";
+
+                const rank =
+                    document.createElement("div");
+
+                rank.className =
+                    "connection-rank";
+
+                rank.textContent =
+                    String(index + 1);
+
+                const people =
+                    document.createElement("div");
+
+                people.className =
+                    "connection-people";
+
+                const sourceName =
+                    document.createElement("div");
+
+                sourceName.className =
+                    "connection-person";
+
+                sourceName.textContent =
+                    source.name || source.id;
+
+                const targetName =
+                    document.createElement("div");
+
+                targetName.className =
+                    "connection-person";
+
+                targetName.textContent =
+                    target.name || target.id;
+
+                const meta =
+                    document.createElement("div");
+
+                meta.className =
+                    "connection-meta";
+
+                meta.textContent =
+                    `${sourceParty}-${source.state || "?"} • ` +
+                    `${targetParty}-${target.state || "?"} • ` +
+                    relationshipType;
+
+                people.appendChild(sourceName);
+                people.appendChild(targetName);
+                people.appendChild(meta);
+
+                const count =
+                    document.createElement("div");
+
+                count.className =
+                    "connection-count";
+
+                const countNumber =
+                    document.createElement("div");
+
+                countNumber.className =
+                    "connection-count-number";
+
+                countNumber.textContent =
+                    Number(
+                        edge.sharedBillCount || 0
+                    ).toLocaleString();
+
+                const countLabel =
+                    document.createElement("div");
+
+                countLabel.className =
+                    "connection-count-label";
+
+                countLabel.textContent =
+                    "shared bills";
+
+                count.appendChild(countNumber);
+                count.appendChild(countLabel);
+
+                row.appendChild(rank);
+                row.appendChild(people);
+                row.appendChild(count);
+
+                container.appendChild(row);
+            }
+        );
+    }
+
+
+    // ========================================================
+    // DRAW NETWORK
+    // ========================================================
+
+    function drawNetwork(data) {
+
+        const container =
+            document.getElementById("network");
+
+        if (!data ||
+            !Array.isArray(data.nodes) ||
+            !Array.isArray(data.edges)) {
+
+            console.error(
+                "Invalid network data:",
+                data
+            );
+
+            return;
+        }
 
         const width =
             container.clientWidth;
@@ -1436,29 +1113,498 @@ window.addEventListener(
         const height =
             container.clientHeight;
 
-        if (
-            width <= 0 ||
-            height <= 0
-        )
+        if (width <= 0 || height <= 0) {
+
+            console.warn(
+                "Network container has no dimensions."
+            );
+
             return;
+        }
 
 
-        svg
-            .attr(
-                "width",
-                width
-            )
-            .attr(
-                "height",
-                height
-            )
-            .attr(
-                "viewBox",
-                `0 0 ${width} ${height}`
+        // ====================================================
+        // STOP PREVIOUS SIMULATION
+        // ====================================================
+
+        if (simulation) {
+
+            simulation.stop();
+            simulation = null;
+        }
+
+
+        // ====================================================
+        // REMOVE PREVIOUS SVG
+        // ====================================================
+
+        container
+            .querySelectorAll("svg")
+            .forEach(
+                element => element.remove()
             );
 
 
-        simulation
+        // ====================================================
+        // HIDE TOOLTIP
+        // ====================================================
+
+        hideConnectionTooltip();
+
+
+        // ====================================================
+        // SVG
+        // ====================================================
+
+        svg =
+            d3.select(container)
+                .append("svg")
+                .attr("width", width)
+                .attr("height", height)
+                .attr("viewBox", `0 0 ${width} ${height}`);
+
+
+        // ====================================================
+        // GRAPH GROUP
+        // ====================================================
+
+        const graph =
+            svg.append("g")
+                .attr(
+                    "class",
+                    "network-graph"
+                );
+
+
+        // ====================================================
+        // ZOOM / PAN
+        // ====================================================
+
+        const zoom =
+            d3.zoom()
+                .scaleExtent([
+                    0.35,
+                    3
+                ])
+                .on(
+                    "zoom",
+                    event => {
+
+                        graph.attr(
+                            "transform",
+                            event.transform
+                        );
+                    }
+                );
+
+        svg.call(zoom);
+
+        svg.on(
+            "dblclick.zoom",
+            null
+        );
+
+        svg.on(
+            "dblclick",
+            () => {
+
+                svg
+                    .transition()
+                    .duration(500)
+                    .call(
+                        zoom.transform,
+                        d3.zoomIdentity
+                    );
+            }
+        );
+
+
+        // ====================================================
+        // NODE SIZE
+        // ====================================================
+
+        const nodeRadius = 12;
+
+
+        // ====================================================
+        // EDGE VISUAL PRIORITY
+        //
+        // Top 20 = strong visual lines
+        // Everything else = thin gray background/noise
+        // ====================================================
+
+        const rankedEdges =
+            [...data.edges]
+                .sort(
+                    (a, b) =>
+                        (Number(b.sharedBillCount) || 0) -
+                        (Number(a.sharedBillCount) || 0)
+                );
+
+        const importantEdges =
+            rankedEdges.slice(0, 20);
+
+        const importantEdgeSet =
+            new Set(importantEdges);
+
+        const importantMax =
+            d3.max(
+                importantEdges,
+                d => Number(
+                    d.sharedBillCount
+                ) || 0
+            ) || 1;
+
+        const importantMin =
+            d3.min(
+                importantEdges,
+                d => Number(
+                    d.sharedBillCount
+                ) || 0
+            ) || 1;
+
+        const importantWidthScale =
+            d3.scaleLinear()
+                .domain([
+                    importantMin,
+                    importantMax
+                ])
+                .range([
+                    3,
+                    10
+                ])
+                .clamp(true);
+
+        function isImportantEdge(edge) {
+
+            return importantEdgeSet.has(
+                edge
+            );
+        }
+
+        function getEdgeWidth(edge) {
+
+            if (!isImportantEdge(edge)) {
+                return 1;
+            }
+
+            return importantWidthScale(
+                Number(
+                    edge.sharedBillCount
+                ) || 0
+            );
+        }
+
+
+        // ====================================================
+        // NODE LOOKUP
+        // ====================================================
+
+        const nodeMap =
+            new Map(
+                data.nodes.map(
+                    node => [
+                        String(node.id),
+                        node
+                    ]
+                )
+            );
+
+
+        // ====================================================
+        // LINKS
+        // ====================================================
+
+        const links =
+            graph.append("g")
+                .attr(
+                    "class",
+                    "links"
+                )
+                .selectAll("line")
+                .data(
+                    data.edges
+                )
+                .join("line")
+                .attr(
+                    "stroke",
+                    "#777"
+                )
+                .attr(
+                    "stroke-width",
+                    d => getEdgeWidth(d)
+                )
+                .attr(
+                    "stroke-opacity",
+                    d =>
+                        isImportantEdge(d)
+                            ? 0.80
+                            : 0.25
+                )
+                .attr(
+                    "stroke-dasharray",
+                    d => {
+
+                        const source =
+                            getEndpointNode(
+                                d.source
+                            );
+
+                        const target =
+                            getEndpointNode(
+                                d.target
+                            );
+
+                        if (!source || !target) {
+                            return null;
+                        }
+
+                        return (
+                            source.party &&
+                            target.party &&
+                            source.party !== target.party
+                        )
+                            ? "6,4"
+                            : null;
+                    }
+                )
+                .on(
+                    "mouseenter",
+                    function(event, edge) {
+
+                        showConnectionTooltip(
+                            event,
+                            edge,
+                            nodeMap
+                        );
+                    }
+                )
+                .on(
+                    "mousemove",
+                    function(event) {
+
+                        positionTooltip(
+                            event
+                        );
+                    }
+                )
+                .on(
+                    "mouseleave",
+                    hideConnectionTooltip
+                );
+
+
+        // ====================================================
+        // NODE GROUPS
+        // ====================================================
+
+        const nodeGroups =
+            graph.append("g")
+                .attr(
+                    "class",
+                    "nodes"
+                )
+                .selectAll("g")
+                .data(
+                    data.nodes
+                )
+                .join("g")
+                .attr(
+                    "class",
+                    "node"
+                );
+
+
+        // ====================================================
+        // NODE CIRCLES
+        // ====================================================
+
+        nodeGroups
+            .append("circle")
+            .attr(
+                "r",
+                nodeRadius
+            )
+            .attr(
+                "fill",
+                getPartyColor
+            )
+            .attr(
+                "stroke",
+                d =>
+                    d.selected
+                        ? "#111"
+                        : "#fff"
+            )
+            .attr(
+                "stroke-width",
+                d =>
+                    d.selected
+                        ? 3
+                        : 1.5
+            )
+            .on(
+                "mouseenter",
+                function(event, node) {
+
+                    d3.select(this)
+                        .attr(
+                            "stroke",
+                            "#111"
+                        )
+                        .attr(
+                            "stroke-width",
+                            3
+                        );
+
+                    showNodeTooltip(
+                        event,
+                        node
+                    );
+                }
+            )
+            .on(
+                "mousemove",
+                function(event) {
+
+                    positionTooltip(
+                        event
+                    );
+                }
+            )
+            .on(
+                "mouseleave",
+                function(event, node) {
+
+                    d3.select(this)
+                        .attr(
+                            "stroke",
+                            node.selected
+                                ? "#111"
+                                : "#fff"
+                        )
+                        .attr(
+                            "stroke-width",
+                            node.selected
+                                ? 3
+                                : 1.5
+                        );
+
+                    hideConnectionTooltip();
+                }
+            )
+            .call(
+                d3.drag()
+                    .on(
+                        "start",
+                        dragStarted
+                    )
+                    .on(
+                        "drag",
+                        dragged
+                    )
+                    .on(
+                        "end",
+                        dragEnded
+                    )
+            );
+
+
+        // ====================================================
+        // NODE LABELS
+        // ====================================================
+
+        nodeGroups
+            .append("text")
+            .attr(
+                "x",
+                nodeRadius + 5
+            )
+            .attr(
+                "y",
+                4
+            )
+            .attr(
+                "font-size",
+                "11px"
+            )
+            .attr(
+                "font-family",
+                "Arial, sans-serif"
+            )
+            .attr(
+                "fill",
+                "#333"
+            )
+            .style(
+                "pointer-events",
+                "none"
+            )
+            .text(
+                d => d.name || d.id
+            );
+
+
+        // ====================================================
+        // FORCE SIMULATION
+        // ====================================================
+
+        simulation =
+            d3.forceSimulation(
+                data.nodes
+            )
+            .force(
+                "link",
+                d3.forceLink(
+                    data.edges
+                )
+                .id(
+                    d => String(d.id)
+                )
+                .distance(
+                    d => {
+
+                        const count =
+                            Number(
+                                d.sharedBillCount
+                            ) || 0;
+
+                        if (count >= 100) {
+                            return 90;
+                        }
+
+                        if (count >= 75) {
+                            return 110;
+                        }
+
+                        if (count >= 50) {
+                            return 130;
+                        }
+
+                        return 155;
+                    }
+                )
+                .strength(
+                    d => {
+
+                        const count =
+                            Number(
+                                d.sharedBillCount
+                            ) || 0;
+
+                        return Math.min(
+                            1,
+                            0.15 +
+                            count / 150
+                        );
+                    }
+                )
+            )
+            .force(
+                "charge",
+                d3.forceManyBody()
+                    .strength(-110)
+            )
             .force(
                 "center",
                 d3.forceCenter(
@@ -1466,17 +1612,484 @@ window.addEventListener(
                     height / 2
                 )
             )
-            .alpha(.15)
-            .restart();
+            .force(
+                "collision",
+                d3.forceCollide(
+                    nodeRadius + 10
+                )
+            )
+            .on(
+                "tick",
+                () => {
 
+                    links
+                        .attr(
+                            "x1",
+                            d => getX(d.source)
+                        )
+                        .attr(
+                            "y1",
+                            d => getY(d.source)
+                        )
+                        .attr(
+                            "x2",
+                            d => getX(d.target)
+                        )
+                        .attr(
+                            "y2",
+                            d => getY(d.target)
+                        );
+
+                    nodeGroups.attr(
+                        "transform",
+                        d =>
+                            `translate(${getX(d)},${getY(d)})`
+                    );
+                }
+            );
+
+
+        // ====================================================
+        // INITIAL VIEW
+        // ====================================================
+
+        const scale =
+            Math.min(
+                width / 1000,
+                height / 750
+            );
+
+        const initialScale =
+            Math.max(
+                0.45,
+                Math.min(
+                    scale,
+                    1
+                )
+            );
+
+        const initialX =
+            width / 2 -
+            (width / 2) *
+            initialScale;
+
+        const initialY =
+            height / 2 -
+            (height / 2) *
+            initialScale;
+
+        svg.call(
+            zoom.transform,
+            d3.zoomIdentity
+                .translate(
+                    initialX,
+                    initialY
+                )
+                .scale(
+                    initialScale
+                )
+        );
     }
-);
 
 
-// ============================================================
-// INITIAL LOAD
-// ============================================================
+    // ========================================================
+    // ENDPOINT NODE
+    // ========================================================
 
-loadMembers();
+    function getEndpointNode(endpoint) {
+
+        if (!endpoint) {
+            return null;
+        }
+
+        if (typeof endpoint === "object") {
+            return endpoint;
+        }
+
+        if (Array.isArray(endpoint)) {
+            return endpoint[0] || null;
+        }
+
+        return null;
+    }
+
+
+    // ========================================================
+    // NODE X / Y
+    // ========================================================
+
+    function getX(node) {
+
+        return Number.isFinite(node.x)
+            ? node.x
+            : 0;
+    }
+
+
+    function getY(node) {
+
+        return Number.isFinite(node.y)
+            ? node.y
+            : 0;
+    }
+
+
+    // ========================================================
+    // PARTY COLOR
+    // ========================================================
+
+    function getPartyColor(node) {
+
+        const party =
+            String(
+                node.party || ""
+            ).toUpperCase();
+
+        if (party === "D") {
+            return "#2166ac";
+        }
+
+        if (party === "R") {
+            return "#b2182b";
+        }
+
+        return "#777";
+    }
+
+
+    // ========================================================
+    // TOOLTIP HTML ESCAPING
+    // ========================================================
+
+    function escapeHtml(value) {
+
+        const div =
+            document.createElement("div");
+
+        div.textContent =
+            value == null
+                ? ""
+                : String(value);
+
+        return div.innerHTML;
+    }
+
+
+    // ========================================================
+    // CONNECTION TOOLTIP
+    // ========================================================
+
+    function showConnectionTooltip(
+        event,
+        edge,
+        nodeMap
+    ) {
+
+        const sourceId =
+            typeof edge.source === "object"
+                ? edge.source.id
+                : edge.source;
+
+        const targetId =
+            typeof edge.target === "object"
+                ? edge.target.id
+                : edge.target;
+
+        const source =
+            nodeMap.get(
+                String(sourceId)
+            );
+
+        const target =
+            nodeMap.get(
+                String(targetId)
+            );
+
+        if (!source || !target) {
+            return;
+        }
+
+        const sharedBills =
+            Number(
+                edge.sharedBillCount
+            ) || 0;
+
+        const sameParty =
+            source.party &&
+            target.party &&
+            source.party === target.party;
+
+        const tooltip =
+            document.getElementById(
+                "networkTooltip"
+            );
+
+        tooltip.innerHTML = `
+            <div class="network-tooltip-title">
+                ${escapeHtml(source.name || source.id)}
+                ↔
+                ${escapeHtml(target.name || target.id)}
+            </div>
+
+            <div class="network-tooltip-row">
+                ${escapeHtml(source.party || "?")}-${escapeHtml(source.state || "?")}
+                ↔
+                ${escapeHtml(target.party || "?")}-${escapeHtml(target.state || "?")}
+            </div>
+
+            <div class="network-tooltip-row">
+                <strong>${sharedBills.toLocaleString()}</strong>
+                shared bills
+            </div>
+
+            <div class="network-tooltip-row">
+                ${sameParty ? "Same party" : "Cross party"}
+            </div>
+        `;
+
+        tooltip.style.display =
+            "block";
+
+        positionTooltip(event);
+    }
+
+
+    // ========================================================
+    // NODE TOOLTIP
+    // ========================================================
+
+    function showNodeTooltip(
+        event,
+        node
+    ) {
+
+        const tooltip =
+            document.getElementById(
+                "networkTooltip"
+            );
+
+        const relationshipCount =
+            Number(
+                node.relationshipCount
+            ) || 0;
+
+        const billCount =
+            Number(
+                node.billCount
+            ) || 0;
+
+        tooltip.innerHTML = `
+            <div class="network-tooltip-title">
+                ${escapeHtml(node.name || node.id)}
+            </div>
+
+            <div class="network-tooltip-row">
+                ${escapeHtml(node.party || "?")}-${escapeHtml(node.state || "?")}
+            </div>
+
+            <div class="network-tooltip-row">
+                Relationships:
+                <strong>${relationshipCount.toLocaleString()}</strong>
+            </div>
+
+            <div class="network-tooltip-row">
+                Bills:
+                <strong>${billCount.toLocaleString()}</strong>
+            </div>
+        `;
+
+        tooltip.style.display =
+            "block";
+
+        positionTooltip(event);
+    }
+
+
+    // ========================================================
+    // TOOLTIP POSITION
+    // ========================================================
+
+    function positionTooltip(event) {
+
+        const tooltip =
+            document.getElementById(
+                "networkTooltip"
+            );
+
+        if (tooltip.style.display === "none") {
+            return;
+        }
+
+        const offset = 14;
+
+        let left =
+            event.clientX +
+            offset;
+
+        let top =
+            event.clientY +
+            offset;
+
+        const rect =
+            tooltip.getBoundingClientRect();
+
+        if (
+            left + rect.width >
+            window.innerWidth - 10
+        ) {
+
+            left =
+                event.clientX -
+                rect.width -
+                offset;
+        }
+
+        if (
+            top + rect.height >
+            window.innerHeight - 10
+        ) {
+
+            top =
+                event.clientY -
+                rect.height -
+                offset;
+        }
+
+        tooltip.style.left =
+            `${Math.max(5, left)}px`;
+
+        tooltip.style.top =
+            `${Math.max(5, top)}px`;
+    }
+
+
+    // ========================================================
+    // HIDE TOOLTIP
+    // ========================================================
+
+    function hideConnectionTooltip() {
+
+        const tooltip =
+            document.getElementById(
+                "networkTooltip"
+            );
+
+        tooltip.style.display =
+            "none";
+    }
+
+
+    // ========================================================
+    // DRAG
+    // ========================================================
+
+    function dragStarted(
+        event,
+        d
+    ) {
+
+        if (!event.active) {
+
+            simulation.alphaTarget(
+                0.3
+            ).restart();
+        }
+
+        d.fx = d.x;
+        d.fy = d.y;
+
+        event.sourceEvent.stopPropagation();
+    }
+
+
+    function dragged(
+        event,
+        d
+    ) {
+
+        d.fx = event.x;
+        d.fy = event.y;
+    }
+
+
+    function dragEnded(
+        event,
+        d
+    ) {
+
+        if (!event.active) {
+
+            simulation.alphaTarget(
+                0
+            );
+        }
+
+        d.fx = null;
+        d.fy = null;
+    }
+
+
+    // ========================================================
+    // RESIZE
+    // ========================================================
+
+    window.addEventListener(
+        "resize",
+        () => {
+
+            if (!svg || !simulation) {
+                return;
+            }
+
+            const container =
+                document.getElementById(
+                    "network"
+                );
+
+            const width =
+                container.clientWidth;
+
+            const height =
+                container.clientHeight;
+
+            if (width <= 0 || height <= 0) {
+                return;
+            }
+
+            svg
+                .attr(
+                    "width",
+                    width
+                )
+                .attr(
+                    "height",
+                    height
+                )
+                .attr(
+                    "viewBox",
+                    `0 0 ${width} ${height}`
+                );
+
+            simulation
+                .force(
+                    "center",
+                    d3.forceCenter(
+                        width / 2,
+                        height / 2
+                    )
+                )
+                .alpha(
+                    0.2
+                )
+                .restart();
+        }
+    );
+
+
+    // ========================================================
+    // INITIAL LOAD
+    // ========================================================
+
+    loadMembers();
 
 </script>
