@@ -55,8 +55,8 @@ The application currently uses Azure SQL Database. Database schema and deploymen
 
 ## Contributing
 
-Contributions, suggestions, and improvements are welcome. The goal is to build a maintainable platform for exploring congressional legislation, activity, and relationships.
+Contributions, suggestions, and improvements are welcome. The goal is to build a maintainable platform for exploring congressional legislation, activity, and relationships.  Please email nels2248@gmail.com or submit a pull request for improvements.
 
-## License
+## Architecture
 
-A project license will be added once the licensing approach is established.
+![Congress Architecture](./images/congress-architecture.png)
