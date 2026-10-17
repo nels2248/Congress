@@ -1,6 +1,7 @@
 # Congressional Intelligence Platform
 
 Live Web App Link here (may require multiple clicks when app goes cold)
+
 https://congress-web-app.azurewebsites.net/
 
 An open-source platform for exploring, analyzing, and understanding the U.S. Congress through legislative data, analytics, and web applications.
