@@ -1,0 +1,6 @@
+CREATE SCHEMA [Bronze]
+    AUTHORIZATION [dbo];
+
+
+GO
+

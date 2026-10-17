@@ -28,6 +28,22 @@
 			"options": {
 				"cwd": "${workspaceFolder}/Congress.Functions"
 			}
+		},
+		{
+			"label": "sqlproj: Build DatabaseProjectcongress",
+			"type": "process",
+			"command": "dotnet",
+			"args": [
+				"build",
+				"c:/Users/nels2/source/repos/Congress/DatabaseProjectcongress/DatabaseProjectcongress.sqlproj"
+			],
+			"problemMatcher": "$sqlproj-problem-matcher",
+			"isBackground": true,
+			"group": {
+				"kind": "build",
+				"isDefault": true
+			},
+			"detail": "Builds the DatabaseProjectcongress SQL project"
 		}
 	]
 }
