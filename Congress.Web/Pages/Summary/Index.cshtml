@@ -1,0 +1,134 @@
+@page
+@model Congress.Web.Pages.Summary.IndexModel
+
+@{
+    ViewData["Title"] = "Summary";
+}
+
+<h1>Bill Summary</h1>
+
+<p class="text-muted">
+    Bill counts for the 119th Congress. Pick how to group rows and columns, and filter by the sponsor's party or state.
+</p>
+
+<form method="get" class="row g-2 align-items-end mb-4">
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Rows</label>
+        <select name="RowGroup" class="form-select" onchange="this.form.submit()">
+            @foreach (var g in Congress.Web.Pages.Summary.IndexModel.Groups)
+            {
+                <option value="@g.Key" selected="@(g.Key == Model.RowGroup)">@g.Value</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Columns</label>
+        <select name="ColGroup" class="form-select" onchange="this.form.submit()">
+            @foreach (var g in Congress.Web.Pages.Summary.IndexModel.Groups)
+            {
+                <option value="@g.Key" selected="@(g.Key == Model.ColGroup)">@g.Value</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Sponsor Party</label>
+        <select name="Party" class="form-select" onchange="this.form.submit()">
+            <option value="">All</option>
+            @foreach (var p in Model.Parties)
+            {
+                <option value="@p" selected="@(p == Model.Party)">@p</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Sponsor State</label>
+        <select name="State" class="form-select" onchange="this.form.submit()">
+            <option value="">All</option>
+            @foreach (var s in Model.States)
+            {
+                <option value="@s" selected="@(s == Model.State)">@s</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <a asp-page="/Summary/Index" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card"><div class="card-body">
+            <div class="text-muted">Bills</div>
+            <div class="fs-2">@Model.TotalBills.ToString("N0")</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card"><div class="card-body">
+            <div class="text-muted">Enacted</div>
+            <div class="fs-2">@Model.Enacted.ToString("N0")</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card"><div class="card-body">
+            <div class="text-muted">Passed One Chamber</div>
+            <div class="fs-2">@Model.PassedOneChamber.ToString("N0")</div>
+        </div></div>
+    </div>
+    <div class="col-md-3">
+        <div class="card"><div class="card-body">
+            <div class="text-muted">Avg Co-sponsors / Bill</div>
+            <div class="fs-2">@Model.AvgCosponsors.ToString("N1")</div>
+        </div></div>
+    </div>
+</div>
+
+@if (Model.RowKeys.Count == 0)
+{
+    <div class="alert alert-info">No bills match these filters.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-sm table-bordered align-middle summary-pivot">
+            <thead class="table-light">
+                <tr>
+                    <th>@Congress.Web.Pages.Summary.IndexModel.Groups[Model.RowGroup]</th>
+                    @foreach (var col in Model.ColKeys)
+                    {
+                        <th class="text-end">@col</th>
+                    }
+                    <th class="text-end">Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var row in Model.RowKeys)
+                {
+                    <tr>
+                        <th class="fw-normal">@row</th>
+                        @foreach (var col in Model.ColKeys)
+                        {
+                            var n = Model.Cell(row, col);
+                            // Shade like a Power BI matrix with background color conditional formatting
+                            var alpha = Model.MaxCell == 0 ? 0 : 0.08 + 0.6 * n / Model.MaxCell;
+                            <td class="text-end"
+                                style="background-color: rgba(13,110,253,@(n == 0 ? "0" : alpha.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture)))">
+                                @(n == 0 ? "" : n.ToString("N0"))
+                            </td>
+                        }
+                        <td class="text-end fw-semibold">@Model.RowTotal(row).ToString("N0")</td>
+                    </tr>
+                }
+            </tbody>
+            <tfoot class="table-light">
+                <tr>
+                    <th>Total</th>
+                    @foreach (var col in Model.ColKeys)
+                    {
+                        <th class="text-end">@Model.ColTotal(col).ToString("N0")</th>
+                    }
+                    <th class="text-end">@Model.TotalBills.ToString("N0")</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+}
