@@ -9,6 +9,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddDbContext<CongressDbContext>(opt =>
     opt.UseSqlServer(builder.Configuration.GetConnectionString("AzureSql")));
 builder.Services.AddHttpClient();
+builder.Services.AddScoped<SqlHelper>();
 var app = builder.Build();   // <-- EVERYTHING ABOVE THIS LINE IS "REGISTER SERVICES"
                               //     EVERYTHING BELOW THIS LINE IS "CONFIGURE THE PIPELINE"
 

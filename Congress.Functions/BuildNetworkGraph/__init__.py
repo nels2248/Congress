@@ -1,8 +1,8 @@
 """
 BuildNetworkGraph — Timer Trigger function.
 
-Runs the Silver.Sponsors and Silver.Cosponsors build procedures first,
-then reads those tables, projects them into a person-to-person
+Reads Silver.Sponsors and Silver.Cosponsors (loaded by LoadCongressData),
+then projects them into a person-to-person
 cosponsorship network (sponsor <-> each cosponsor, per bill),
 runs Louvain community detection, and writes the result to
 Gold.NetworkNodes / Gold.NetworkEdges for Congress.Web.
@@ -410,14 +410,13 @@ def main(mytimer: func.TimerRequest) -> None:
     try:
 
         # ----------------------------------------------------
-        # STEP 1 — Rebuild Silver tables
+        # STEP 1 — Silver tables (already loaded by LoadCongressData)
         # ----------------------------------------------------
 
-        logging.info(
-            "Refreshing Silver.Sponsors and Silver.Cosponsors..."
-        )
-
-        build_silver_tables(connection)
+        # Silver.Sponsors / Silver.Cosponsors are now written directly by
+        # LoadCongressData (parsed from XML), so the slow
+        # Silver.BuildSponsors / Silver.BuildCosponsors procs are no
+        # longer run here. build_silver_tables() is kept as a fallback.
 
         # ----------------------------------------------------
         # STEP 2 — Read refreshed Silver data

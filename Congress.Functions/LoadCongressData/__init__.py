@@ -13,6 +13,8 @@ import azure.functions as func
 import time
 import concurrent.futures
 
+from . import silver_load
+
 URLS = {
     "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hconres/BILLSTATUS-119-hconres.zip",
     "https://www.govinfo.gov/bulkdata/BILLSTATUS/119/hjres/BILLSTATUS-119-hjres.zip",
@@ -342,7 +344,7 @@ def bulk_insert_values(cursor, value_rows):
         value_rows,
     )
 
-def process_xml_bytes(connection, entry_name, source_url, raw_bytes, id_counter):
+def process_xml_bytes(connection, entry_name, source_url, raw_bytes, id_counter, silver):
     try:
         root = ET.fromstring(raw_bytes)
     except ET.ParseError as ex:
@@ -365,6 +367,7 @@ def process_xml_bytes(connection, entry_name, source_url, raw_bytes, id_counter)
 
         connection.commit()
         cursor.close()
+        silver.add(root, file_id)
         return {"status": "loaded", "elements": elements_processed, "values": values_processed}
     except Exception:
         connection.rollback()
@@ -398,6 +401,7 @@ def main(mytimer: func.TimerRequest) -> None:
         loaded = errors = 0
         total_elements = total_values = 0
         id_counter = IdCounter()
+        silver = silver_load.SilverCollector()
 
         for url in URLS:
             logging.info("Downloading %s", url)
@@ -422,7 +426,8 @@ def main(mytimer: func.TimerRequest) -> None:
                             entry_name,
                             url,
                             raw_bytes,
-                            id_counter
+                            id_counter,
+                            silver
                         )
                     except Exception as ex:
                         errors += 1
@@ -476,5 +481,11 @@ def main(mytimer: func.TimerRequest) -> None:
         connection.commit()
         cursor.close()
         logging.info("Silver.Bills build complete")
+
+        # Sponsors / Cosponsors / Actions / Subjects come straight from the
+        # parsed XML (like the Fabric notebook) instead of pivoting Bronze.
+        logging.info("Writing Silver tables parsed from XML (%s bills)...", len(silver.bills))
+        silver_load.write_silver(connection, silver)
+        logging.info("Silver tables complete")
     finally:
         connection.close()

@@ -1,0 +1,99 @@
+@page
+@model Congress.Web.Pages.Members.IndexModel
+
+@{
+    ViewData["Title"] = "Members";
+}
+
+<h1>Members</h1>
+
+<p class="text-muted">
+    Everyone who sponsored or co-sponsored a bill in the 119th Congress. Cross-party % is the share of their co-sponsorships on bills from the other party.
+</p>
+
+<form method="get" class="row g-2 align-items-end mb-4">
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Chamber</label>
+        <select name="Chamber" class="form-select" onchange="this.form.submit()">
+            <option value="">All</option>
+            <option value="House" selected="@(Model.Chamber == "House")">House</option>
+            <option value="Senate" selected="@(Model.Chamber == "Senate")">Senate</option>
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Party</label>
+        <select name="Party" class="form-select" onchange="this.form.submit()">
+            <option value="">All</option>
+            @foreach (var p in Model.Parties)
+            {
+                <option value="@p" selected="@(p == Model.Party)">@p</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small text-muted">State</label>
+        <select name="State" class="form-select" onchange="this.form.submit()">
+            <option value="">All</option>
+            @foreach (var s in Model.States)
+            {
+                <option value="@s" selected="@(s == Model.State)">@s</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Sort by</label>
+        <select name="Sort" class="form-select" onchange="this.form.submit()">
+            @foreach (var s in Congress.Web.Pages.Members.IndexModel.Sorts)
+            {
+                <option value="@s.Key" selected="@(s.Key == Model.Sort)">@s.Value.Label</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label small text-muted">Name contains</label>
+        <input name="Search" value="@Model.Search" class="form-control" />
+    </div>
+    <div class="col-md-2 d-flex gap-2">
+        <button type="submit" class="btn btn-primary">Apply</button>
+        <a asp-page="/Members/Index" class="btn btn-outline-secondary">Reset</a>
+    </div>
+</form>
+
+<p class="small text-muted">@Model.Members.Count.ToString("N0") members</p>
+
+@if (Model.Members.Count == 0)
+{
+    <div class="alert alert-info">No members match these filters.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-sm align-middle">
+            <thead>
+                <tr>
+                    <th>Member</th>
+                    <th>Party</th>
+                    <th>State</th>
+                    <th>Chamber</th>
+                    <th class="text-end">Sponsored</th>
+                    <th class="text-end">Co-sponsored</th>
+                    <th class="text-end">Cross-party %</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var m in Model.Members)
+                {
+                    <tr>
+                        <td><a asp-page="/Members/Details" asp-route-id="@m.BioguideId">@m.FullName</a></td>
+                        <td>@m.Party</td>
+                        <td>@(m.District.HasValue ? $"{m.State}-{m.District}" : m.State)</td>
+                        <td>@m.Chamber</td>
+                        <td class="text-end">@m.Sponsored.ToString("N0")</td>
+                        <td class="text-end">@m.Cosponsored.ToString("N0")</td>
+                        <td class="text-end">@m.CrossPartyPct.ToString("P0")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

@@ -1,0 +1,168 @@
+@page
+@model Congress.Web.Pages.Members.DetailsModel
+
+@{
+    ViewData["Title"] = Model.Member?.FullName ?? "Member";
+
+    string StatusBadge(string status) => status switch
+    {
+        "Enacted"       => "bg-success",
+        "Passed House"  => "bg-primary",
+        "Passed Senate" => "bg-primary",
+        "Referred"      => "bg-secondary",
+        _               => "bg-light text-dark"
+    };
+}
+
+<div class="mb-3">
+    <a asp-page="/Members/Index">&larr; Back to Members</a>
+</div>
+
+@if (Model.Member == null)
+{
+    <h1>Member Not Found</h1>
+    <div class="alert alert-warning">No sponsor or co-sponsor was found with that ID.</div>
+}
+else
+{
+    var m = Model.Member;
+
+    <h1>@m.FullName</h1>
+    <p class="text-muted">
+        @m.Party &middot; @(m.District.HasValue ? $"{m.State} District {m.District}" : m.State) &middot; @m.Chamber
+    </p>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card"><div class="card-body">
+                <div class="text-muted">Bills Sponsored</div>
+                <div class="fs-2">@m.Sponsored.ToString("N0")</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card"><div class="card-body">
+                <div class="text-muted">Bills Co-sponsored</div>
+                <div class="fs-2">@m.Cosponsored.ToString("N0")</div>
+            </div></div>
+        </div>
+        <div class="col-md-4">
+            <div class="card"><div class="card-body">
+                <div class="text-muted">Cross-party Co-sponsorships</div>
+                <div class="fs-2">@m.CrossPartyPct.ToString("P0")</div>
+            </div></div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <h4>Most Frequent Co-sponsors of Their Bills</h4>
+            @if (Model.TheirSupporters.Count == 0)
+            {
+                <p class="text-muted">None.</p>
+            }
+            else
+            {
+                <table class="table table-sm">
+                    <tbody>
+                        @foreach (var c in Model.TheirSupporters)
+                        {
+                            <tr>
+                                <td><a asp-page="/Members/Details" asp-route-id="@c.BioguideId">@c.FullName</a></td>
+                                <td class="text-end">@c.Bills.ToString("N0") bills</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+        <div class="col-md-6">
+            <h4>Sponsors They Co-sponsor Most</h4>
+            @if (Model.TheySupport.Count == 0)
+            {
+                <p class="text-muted">None.</p>
+            }
+            else
+            {
+                <table class="table table-sm">
+                    <tbody>
+                        @foreach (var c in Model.TheySupport)
+                        {
+                            <tr>
+                                <td><a asp-page="/Members/Details" asp-route-id="@c.BioguideId">@c.FullName</a></td>
+                                <td class="text-end">@c.Bills.ToString("N0") bills</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    <h4>Bills Sponsored</h4>
+    @if (m.Sponsored > Model.SponsoredBills.Count)
+    {
+        <p class="small text-muted">Showing the @Model.SponsoredBills.Count most recently active of @m.Sponsored.ToString("N0").</p>
+    }
+    <div class="table-responsive mb-4">
+        <table class="table table-striped table-sm align-middle">
+            <thead>
+                <tr><th>Bill</th><th>Title</th><th>Introduced</th><th>Latest Action</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.SponsoredBills)
+                {
+                    <tr>
+                        <td class="text-nowrap">
+                            <a asp-page="/Bills/Details" asp-route-type="@b.Type" asp-route-billNumber="@b.BillNumber">@b.Type @b.BillNumber</a>
+                            @if (!string.IsNullOrEmpty(b.LegislationUrl))
+                            {
+                                <a href="@b.LegislationUrl" target="_blank" rel="noopener" title="Open on congress.gov">&#8599;</a>
+                            }
+                        </td>
+                        <td>@b.Title</td>
+                        <td class="text-nowrap">@b.IntroducedDate?.ToString("MM/dd/yyyy")</td>
+                        <td class="text-nowrap">@b.LatestActionDate?.ToString("MM/dd/yyyy")</td>
+                        <td><span class="badge @StatusBadge(b.Status)">@b.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <h4>Bills Co-sponsored</h4>
+    @if (m.Cosponsored > Model.CosponsoredBills.Count)
+    {
+        <p class="small text-muted">Showing the @Model.CosponsoredBills.Count most recent of @m.Cosponsored.ToString("N0").</p>
+    }
+    <div class="table-responsive">
+        <table class="table table-striped table-sm align-middle">
+            <thead>
+                <tr><th>Bill</th><th>Title</th><th>Sponsor</th><th>Signed On</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+                @foreach (var b in Model.CosponsoredBills)
+                {
+                    <tr>
+                        <td class="text-nowrap">
+                            <a asp-page="/Bills/Details" asp-route-type="@b.Type" asp-route-billNumber="@b.BillNumber">@b.Type @b.BillNumber</a>
+                            @if (!string.IsNullOrEmpty(b.LegislationUrl))
+                            {
+                                <a href="@b.LegislationUrl" target="_blank" rel="noopener" title="Open on congress.gov">&#8599;</a>
+                            }
+                        </td>
+                        <td>@b.Title</td>
+                        <td>@b.SponsorName</td>
+                        <td class="text-nowrap">
+                            @b.SponsorshipDate?.ToString("MM/dd/yyyy")
+                            @if (b.IsOriginal)
+                            {
+                                <span class="badge bg-info text-dark" title="Original co-sponsor">orig</span>
+                            }
+                        </td>
+                        <td><span class="badge @StatusBadge(b.Status)">@b.Status</span></td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
